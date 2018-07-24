@@ -105,7 +105,7 @@ class Kommune:
                     error = json.load(f)
             except FileNotFoundError:
                 error = {}
-            error.setdefault[thisday] = []
+            error.setdefault(thisday, [])
             error[thisday].append(pdf)
             with open("error.json", "w") as f:
                 json.dump(error, f)
