@@ -25,6 +25,16 @@ def thisday() -> str:
     now = date.today()
     return(f"{now.day}-{now.month}-{now.year}")
 
+pdfDict = {"http://93.89.112.77" : "document?",
+           "https://www.vadso.kommune.no" : "dokid="
+           }
+
+
+meetingDict ={"http://93.89.112.77" : "DmbMeetingDetail",
+              "https://www.vadso.kommune.no" : "response=mote&",
+              }
+
+
 # start Class
 
 
@@ -54,8 +64,7 @@ class Kommune:
             self.pdfLog: dict = json.load(open("PdfLog.json", "r"))
         except FileNotFoundError:
             self.pdfLog: dict = {}
-        if "einnsyn" in self.url.lower():
-            self.type = "einnsyn"
+
 
     def __str__(self) -> str:
         representation = f"""
@@ -91,8 +100,8 @@ class Kommune:
         if str(resp) == "<Response [200]>":
             links: list = BS(self.geturl(url).text, "lxml").findAll("a",
                              href=True)
-            pdf: list = [self.base + a.get("href") for a in links if ".pdf"
-                         in a.get("href").lower() or "document?" in
+            pdf: list = [a.get("href") for a in links if ".pdf"
+                         in a.get("href").lower() or pdfDict[self.base] in
                          a.get("href").lower()]
             if not self.pdf:
                 self.pdf = str(len(pdf))
@@ -115,8 +124,10 @@ class Kommune:
         """Saves pdf from url"""
         if not url:
             url = self.url
+        if "https://" not in url and "http://" not in url:
+            url = self.base + url
         try:
-            resp = self.geurl(url)
+            resp = self.geturl(url)
             if str(resp) == "<Response [200]>":
                 with open("temp.pdf", "wb") as file:
                     file.write(resp.content)
@@ -139,53 +150,54 @@ class Kommune:
         gold = {}
         if not url:
             url = self.url
-        if self.type == "einnsyn":
-            for i in self.einnsynmoter():
-                for y in self.findPdf(i):
-                    print(f"møte {i}, sak {y}")
-                    if str(y) in self.pdfLog:
-                        pass
-                    else:
-                        if self.getPdf(y) == "no pdf found":
-                            self.pdfLog.setdefault(str(y), ["0",
-                                                   "no pdf error"])
-                        else:
-                            self.pdfLog.setdefault(str(y), ["0"])
-                            tekst = self.readPdf()
-                            for s in self.cash:
-                                if s in tekst:
-                                    gold.setdefault(str(y), [])
-                                    self.pdfLog[str(y)][0] = "1"
-                                    self.pdfLog[str(y)].append(s)
-                                    print(i, s)
-                                    gold[str(y)].append(s)
-        else:
-            for i in self.findPdf(url):
-                print(i)
-                if str(i) in self.pdfLog:
+        #if self.type == "einnsyn":
+        for i in self.getMoter():
+            for y in self.findPDF(i):
+                print(f"møte {i}, sak {y}")
+                if str(y) in self.pdfLog:
                     pass
                 else:
-                    if self.getPdf(y) == "no pdf found":
-                            self.pdfLog.setdefault(str(y), ["0",
-                                                   "no pdf error"])
+                    if self.getPDF(y) == "no pdf found":
+                        self.pdfLog.setdefault(str(y), ["0",
+                                               "no pdf error"])
                     else:
-                        self.pdfLog.setdefault(str(i), ["0"])
-                        tekst = self.readPdf()
+                        self.getPDF(y)
+                        self.pdfLog.setdefault(str(y), ["0"])
+                        tekst = self.readPDF()
                         for s in self.cash:
-                            if s in self.readPdf():
+                            if s in tekst:
                                 gold.setdefault(str(y), [])
-                                self.pdfLog[str(i)][0] = "1"
-                                self.pdfLog[str(i)].append(s)
+                                self.pdfLog[str(y)][0] = "1"
+                                self.pdfLog[str(y)].append(s)
                                 print(i, s)
                                 gold[str(y)].append(s)
+#        else:
+#            for i in self.findPDF(url):
+#                print(i)
+#                if str(i) in self.pdfLog:
+#                    pass
+#                else:
+#                    if self.getPDF(y) == "no pdf found":
+#                            self.pdfLog.setdefault(str(y), ["0",
+#                                                   "no pdf error"])
+#                    else:
+#                        self.pdfLog.setdefault(str(i), ["0"])
+#                        tekst = self.readPDF()
+#                        for s in self.cash:
+#                            if s in self.readPDF():
+#                                gold.setdefault(str(y), [])
+#                                self.pdfLog[str(i)][0] = "1"
+#                                self.pdfLog[str(i)].append(s)
+#                                print(i, s)
+#                                gold[str(y)].append(s)
 
         with open("PdfLog.json", "w") as f:
             json.dump(self.pdfLog, f)
         return gold
 
-    def einnsynmoter(self):
+    def getMoter(self):
         """Finds all meetings on einnsyn site and returnes them as a list"""
-        links: list = BS(self.geturl().text, "lxml").findAll("a", href=True)
+        links: list = BS(self.geturl().content, "lxml").findAll("a", href=True)
         meetings: list = [self.base + a.get("href") for a in links if
-                          "DmbMeetingDetail" in a.get("href")]
+                          meetingDict[self.base] in a.get("href")]
         return meetings
