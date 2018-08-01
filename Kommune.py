@@ -13,6 +13,7 @@ from typing import Dict, List
 from bs4 import BeautifulSoup as BS
 import json
 from datetime import date
+from selenium import webdriver
 
 requests.packages.urllib3.disable_warnings()
 
@@ -25,14 +26,38 @@ def thisday() -> str:
     now = date.today()
     return(f"{now.day}-{now.month}-{now.year}")
 
-pdfDict = {"http://93.89.112.77" : "document?",
-           "https://www.vadso.kommune.no" : "dokid="
-           }
 
-
-meetingDict ={"http://93.89.112.77" : "DmbMeetingDetail",
-              "https://www.vadso.kommune.no" : "response=mote&",
-              }
+pdfCrawl = {"http://93.89.112.77": ["DmbMeetingDetail", "document?"],
+            "https://www.vadso.kommune.no": ["response=mote&", "dokid="],
+            "http://www.alstahaug.kommune.no":
+            ["offentlig-mote-kommunestyret", ".pdf"],
+            "http://www.alta.kommune.no":
+            ["offentlig-mote-kommunestyret", ".pdf"],
+            "http://innsyn.ekommune.no": ["response=mote&", "dokid="],
+            "http://www.asnes.kommune.no": ["response=mote&", "dokid="],
+            "http://159.171.0.170": ["DmbMeetingDetail", "document?"],
+            "http://innsyn.alesund.kommune.no": ["response=mote&", "dokid="],
+            "http://einnsyn.fosendrift.no": ["DmbMeetingDetail", "document?"],
+            "https://www.ostre-toten.kommune.no":
+            ["response=mote&", "dokid="],
+            "http://84.49.104.166": ["DmbMeetingDetail", "document?"],
+            "http://www.vaaler-he.kommune.no": ["response=mote&", "dokid="],
+            "http://www.varoy.kommune.no": ["response=mote&", "dokid="],
+            "https://innsyn.ssikt.no": ["DmbMeetingDetail", "document?"],
+            "http://94.139.92.229": ["DmbMeetingDetail", "document?"],
+            "https://einnsyn.evps.no": ["DmbMeetingDetail", "document?"],
+            "http://opengov.cloudapp.net": ["meetings/details", ".pdf"],
+            "https://innsyn.ssikt.no": ["DmbMeetingDetail", "document?"],
+            "http://159.171.48.136": ["DmbMeetingDetail", "document?"],
+            "https://www.ulvik.kommune.no": ["response=mote&", "dokid="],
+            "https://innsyn.trondheim.kommune.no": ["BYS","dokid="],
+            "https://innsyn.tromso.kommune.no": ["KST", "dokid="],
+            "http://www.tokke.kommune.no": [None, "/kommunestyret/"],
+            
+            
+            
+            
+            }
 
 
 # start Class
@@ -99,10 +124,11 @@ class Kommune:
         resp: requests.models.Response = self.geturl(url)
         if str(resp) == "<Response [200]>":
             links: list = BS(self.geturl(url).text, "lxml").findAll("a",
-                             href=True)
+                            href=True)
             pdf: list = [a.get("href") for a in links if ".pdf"
-                         in a.get("href").lower() or pdfDict[self.base] in
-                         a.get("href").lower()]
+                         in a.get("href").lower() or pdfCrawl[self.base][1]
+                         .lower()
+                         in a.get("href").lower()]
             if not self.pdf:
                 self.pdf = str(len(pdf))
             else:
@@ -196,8 +222,64 @@ class Kommune:
         return gold
 
     def getMoter(self):
-        """Finds all meetings on einnsyn site and returnes them as a list"""
-        links: list = BS(self.geturl().content, "lxml").findAll("a", href=True)
-        meetings: list = [self.base + a.get("href") for a in links if
-                          meetingDict[self.base] in a.get("href")]
-        return meetings
+        if pdfCrawl[self.base][0] is None:
+            pass
+        else:
+            """Finds all meetings on meeting calender site and returnes them as a list"""
+            links: list = BS(self.geturl().content, "lxml").findAll("a", href=True)
+            meetings: list = [self.base + a.get("href") for a in links if
+                              pdfCrawl[self.base][1].lower() in
+                              a.get("href").lower]
+            return meetings
+
+    def getMoterSel(self):
+        if pdfCrawl[self.base][0] is None:
+            pass
+        
+        else:
+            options = webdriver.ChromeOptions()
+            options.add_argument('headless')
+            options.add_argument('--window-size=1920,1080')
+            driver = webdriver.Chrome(chrome_options=options)
+            driver.get(self.url)
+            time.sleep(1)
+            utval = pdfCrawl[self.base][0]
+            td = driver.find_elements_by_xpath(f"//td[@data-utvalg='{utval}']")
+            ids = []
+            for i in td:
+                try:
+                    ids.append(i.find_element_by_class_name("fc-content"))
+                except:
+                    pass
+            print(len(ids))
+            meetings: list = [self.url + "motedag?offmoteid=" +
+                              i.get_attribute("id") for i in ids]
+            
+            return meetings
+
+
+
+#for i in kommune:
+#    try:
+#        print("pass check")
+#        if len(kommune[i][2]) >= 11:
+#            print("willpass")
+#        else:
+#            try:
+#                a = geturl(kommune[i][0]+"innsyn")
+#                print(a, "checked url")
+#            except:
+#                a= "noresponse"
+#                print(a)
+#            
+#            if str(a) == "<Response [200]>":
+#                print("valid response, appending url")
+#                kommune[i][2] = a.url
+#            else:
+#                print("innvalid response, appending response")
+#                kommune[i][2] = a
+#            
+#    except:
+#        print("long")
+#        
+           
