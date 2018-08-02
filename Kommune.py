@@ -50,13 +50,48 @@ pdfCrawl = {"http://93.89.112.77": ["DmbMeetingDetail", "document?"],
             "https://innsyn.ssikt.no": ["DmbMeetingDetail", "document?"],
             "http://159.171.48.136": ["DmbMeetingDetail", "document?"],
             "https://www.ulvik.kommune.no": ["response=mote&", "dokid="],
-            "https://innsyn.trondheim.kommune.no": ["BYS","dokid="],
-            "https://innsyn.tromso.kommune.no": ["KST", "dokid="],
+            "https://innsyn.trondheim.kommune.no": ["//td[@data-utvalg='BYS'",
+                                                    "dokid="],  # selenium
+            "https://innsyn.tromso.kommune.no": ["//td[@data-utvalg='KST'",
+                                                 "dokid="],   # selenium
             "http://www.tokke.kommune.no": [None, "/kommunestyret/"],
-            
-            
-            
-            
+            "https://www.faerder.kommune.no": ["response=mote&", "dokid="],
+            "http://einnsyn.tana.kommune.no":["DmbMeetingDetail", "document?"],
+            "http://innsyn.surnadal.kommune.no":
+            ["DmbMeetingDetail", "document?"],
+            "http://innsyn.sunndal.kommune.no/":
+            ["DmbMeetingDetail", "document?"],
+            "https://www.sund.kommune.no": ["response=mote&", "dokid="],
+            "https://www.sortland.kommune.no/": ["response=mote&", "dokid="],
+            "https://nyttinnsyn.sola.kommune.no": ["response=mote&", "dokid="],
+            "https://www.skodje.kommune.no/": ["response=mote&", "dokid="],
+            "http://innsyn.seljord.kommune.no":
+            ["DmbMeetingDetail", "document?"],
+            "https://innsyn.sandefjord.kommune.no":
+            ["response=mote&", "dokid="],
+            "https://www.rade.kommune.no": ["response=mote&", "dokid="],
+            "http://innsyn.royrvik.kommune.no": ["/motedag", "getDocument?"],
+            "http://www.rodoy.kommune.no": ["artikkel.aspx", "/Handlers/"],
+            "https://www1.ringsaker.kommune.no": ["response=mote&", "dokid="],
+            "http://www.ringebu.kommune.no": ["response=mote&", "dokid="],
+            "http://www.re.kommune.no/innsyn": ["response=mote&", "dokid="],
+            "https://tjenester.oslo.kommune.no": ["moetemappe=", "api/fil"], 
+            "https://oskommune.no": ["response=mote&", "dokid="],
+            "https://www.odda.kommune.no": ["response=mote&", "dokid="],
+            "https://innsyn.nordre-land.kommune.no":
+            ["response=mote&", "dokid="],
+            "http://innsyn.nissedal.kommune.no/":
+            ["DmbMeetingDetail", "document?"],
+            "https://www.nesset.kommune.no": [None,".pdf"],
+            "https://innsyn.nesna.kommune.no": ["//td[@data-utvalg='KOMST15'",
+                                                "dokid="],
+            "https://www.naustdal.kommune.no": ["response=mote&", "dokid="],
+            "http://einnsyn.meraker.kommune.no":
+            ["UtvalgmoeteDetail", "ShowUtvalg"],
+            "https://prokomresources.prokomcdn.no": ["//a[contains(@href,"
+                                                                  "'moteid')]",
+                                                     "//a[@class="
+                                                     "'list-group-item']"],
             }
 
 
@@ -117,14 +152,27 @@ class Kommune:
                 i += 1
             return resp
 
-    def findPDF(self, url: str = None) -> List:
+    def findPDFSel(self, url: str = None) -> List:
         if not url:
             url = self.url
         """Finds all pdfs on site and returnes them as a list"""
+        if "prokomresources" in url:
+            options = webdriver.ChromeOptions()
+            options.add_argument('headless')
+            options.add_argument('--window-size=1920,1080')
+            driver = webdriver.Chrome(chrome_options=options)
+            driver.get(url)
+            time.sleep(1)
+            links: list = driver.find_elements_by_xpath(pdfCrawl[self.base][1])
+            pdf: list = [i.get_attribute("href") for i in links]
+            return pdf
+    def findPDF(self, url: str = None) -> List:
+        if not url:
+            url = self.url
         resp: requests.models.Response = self.geturl(url)
         if str(resp) == "<Response [200]>":
             links: list = BS(self.geturl(url).text, "lxml").findAll("a",
-                            href=True)
+                             href=True)
             pdf: list = [a.get("href") for a in links if ".pdf"
                          in a.get("href").lower() or pdfCrawl[self.base][1]
                          .lower()
@@ -150,7 +198,7 @@ class Kommune:
         """Saves pdf from url"""
         if not url:
             url = self.url
-        if "https://" not in url and "http://" not in url:
+        if "https://" not in url.lower() and "http://" not in url.lower():
             url = self.base + url
         try:
             resp = self.geturl(url)
@@ -235,7 +283,6 @@ class Kommune:
     def getMoterSel(self):
         if pdfCrawl[self.base][0] is None:
             pass
-        
         else:
             options = webdriver.ChromeOptions()
             options.add_argument('headless')
@@ -243,19 +290,23 @@ class Kommune:
             driver = webdriver.Chrome(chrome_options=options)
             driver.get(self.url)
             time.sleep(1)
-            utval = pdfCrawl[self.base][0]
-            td = driver.find_elements_by_xpath(f"//td[@data-utvalg='{utval}']")
+            td = driver.find_elements_by_xpath(str(pdfCrawl[self.base][0]))
             ids = []
-            for i in td:
-                try:
-                    ids.append(i.find_element_by_class_name("fc-content"))
-                except:
-                    pass
-            print(len(ids))
-            meetings: list = [self.url + "motedag?offmoteid=" +
-                              i.get_attribute("id") for i in ids]
-            
-            return meetings
+            if "prokomresources" in self.base:
+                meetings: list = [i.get_attribute("href") for i in td]
+                driver.quit()
+                return meetings
+            else:
+                for i in td:
+                    try:
+                        ids.append(i.find_element_by_class_name("fc-content"))
+                    except:
+                        pass
+                print(len(ids))
+                meetings: list = [self.url + "motedag?offmoteid=" +
+                                  i.get_attribute("id") for i in ids]
+                driver.quit()
+                return meetings
 
 
 
