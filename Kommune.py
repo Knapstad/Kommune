@@ -92,6 +92,28 @@ pdfCrawl = {"http://93.89.112.77": ["DmbMeetingDetail", "document?"],
                                                                   "'moteid')]",
                                                      "//a[@class="
                                                      "'list-group-item']"],
+            "https://www.lunner.kommune.no": ["mote-kommunestyret", ".pdf"],
+            "http://innsyn.lillesand.kommune.no/" :["response=mote&",
+                                                    "dokid="],
+            "http://www.lebesby.kommune.no": ["mote-kommunestyret", ".pdf"],
+            "http://www.kvafjord.kommune.no":
+            ["UtvalgmoeteDetail", "ShowUtvalg"],
+            "http://www.kviteseid.kommune.no": [None, "kommunestyret/2018"],
+            "https://www.kvam.no": ["response=mote&", "dokid="],
+            "http://innsyn.kristiansund.kommune.no/": ["DmbMeetingDetail",
+                                                       "document?"],
+            "http://postlister.avjovarre.no/": ["DmbMeetingDetail", 
+                                                "document?"],
+            "http://159.171.48.136": ["DmbMeetingDetail", "document?"],
+            "http://217.168.95.230": ["DmbMeetingDetail", "document?"],
+            "http://innsyn.hoylandet.kommune.no":["/motedag", "getDocument?"],
+            "https://www.horten.kommune.no": ["response=mote&", "dokid="],
+            "http://www.holmestrand.kommune.no": ["response=mote&", "dokid="],
+            "http://www.heroy-no.kommune.no": ["mote-kommunestyret", ".pdf"],
+            
+            
+            
+            
             }
 
 
@@ -156,16 +178,16 @@ class Kommune:
         if not url:
             url = self.url
         """Finds all pdfs on site and returnes them as a list"""
-        if "prokomresources" in url:
-            options = webdriver.ChromeOptions()
-            options.add_argument('headless')
-            options.add_argument('--window-size=1920,1080')
-            driver = webdriver.Chrome(chrome_options=options)
-            driver.get(url)
-            time.sleep(1)
-            links: list = driver.find_elements_by_xpath(pdfCrawl[self.base][1])
-            pdf: list = [i.get_attribute("href") for i in links]
-            return pdf
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        options.add_argument('--window-size=1920,1080')
+        driver = webdriver.Chrome(chrome_options=options)
+        driver.get(url)
+        time.sleep(1)
+        links: list = driver.find_elements_by_xpath(pdfCrawl[self.base][1])
+        pdf: list = [i.get_attribute("href") for i in links]
+        return pdf
+
     def findPDF(self, url: str = None) -> List:
         if not url:
             url = self.url
