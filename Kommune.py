@@ -29,17 +29,14 @@ def thisday() -> str:
 
 pdfCrawl = {"http://93.89.112.77": ["DmbMeetingDetail", "document?"],
             "https://www.vadso.kommune.no": ["response=mote&", "dokid="],
-            "http://www.alstahaug.kommune.no":
-            ["offentlig-mote-kommunestyret", ".pdf"],
-            "http://www.alta.kommune.no":
-            ["offentlig-mote-kommunestyret", ".pdf"],
+            "http://www.alstahaug.kommune.no": ["-mote-", ".pdf"],
+            "http://www.alta.kommune.no": ["-mote-", ".pdf"],
             "http://innsyn.ekommune.no": ["response=mote&", "dokid="],
             "http://www.asnes.kommune.no": ["response=mote&", "dokid="],
             "http://159.171.0.170": ["DmbMeetingDetail", "document?"],
             "http://innsyn.alesund.kommune.no": ["response=mote&", "dokid="],
             "http://einnsyn.fosendrift.no": ["DmbMeetingDetail", "document?"],
-            "https://www.ostre-toten.kommune.no":
-            ["response=mote&", "dokid="],
+            "https://www.ostre-toten.kommune.no": ["response=mote&", "dokid="],
             "http://84.49.104.166": ["DmbMeetingDetail", "document?"],
             "http://www.vaaler-he.kommune.no": ["response=mote&", "dokid="],
             "http://www.varoy.kommune.no": ["response=mote&", "dokid="],
@@ -50,25 +47,19 @@ pdfCrawl = {"http://93.89.112.77": ["DmbMeetingDetail", "document?"],
             "https://innsyn.ssikt.no": ["DmbMeetingDetail", "document?"],
             "http://159.171.48.136": ["DmbMeetingDetail", "document?"],
             "https://www.ulvik.kommune.no": ["response=mote&", "dokid="],
-            "https://innsyn.trondheim.kommune.no": ["//td[@data-utvalg='BYS'",
-                                                    "dokid="],  # selenium
-            "https://innsyn.tromso.kommune.no": ["//td[@data-utvalg='KST'",
-                                                 "dokid="],   # selenium
+            "https://innsyn.trondheim.kommune.no": ["//td[@data-utvalg='BYS'", "dokid="],  # selenium
+            "https://innsyn.tromso.kommune.no": ["//td[@data-utvalg='KST'", "dokid="],   # selenium
             "http://www.tokke.kommune.no": [None, "/kommunestyret/"],
             "https://www.faerder.kommune.no": ["response=mote&", "dokid="],
-            "http://einnsyn.tana.kommune.no":["DmbMeetingDetail", "document?"],
-            "http://innsyn.surnadal.kommune.no":
-            ["DmbMeetingDetail", "document?"],
-            "http://innsyn.sunndal.kommune.no/":
-            ["DmbMeetingDetail", "document?"],
+            "http://einnsyn.tana.kommune.no": ["DmbMeetingDetail", "document?"],
+            "http://innsyn.surnadal.kommune.no": ["DmbMeetingDetail", "document?"],
+            "http://innsyn.sunndal.kommune.no": ["DmbMeetingDetail", "document?"],
             "https://www.sund.kommune.no": ["response=mote&", "dokid="],
-            "https://www.sortland.kommune.no/": ["response=mote&", "dokid="],
+            "https://www.sortland.kommune.no": ["response=mote&", "dokid="],
             "https://nyttinnsyn.sola.kommune.no": ["response=mote&", "dokid="],
-            "https://www.skodje.kommune.no/": ["response=mote&", "dokid="],
-            "http://innsyn.seljord.kommune.no":
-            ["DmbMeetingDetail", "document?"],
-            "https://innsyn.sandefjord.kommune.no":
-            ["response=mote&", "dokid="],
+            "https://www.skodje.kommune.no": ["response=mote&", "dokid="],
+            "http://innsyn.seljord.kommune.no": ["DmbMeetingDetail", "document?"],
+            "https://innsyn.sandefjord.kommune.no": ["response=mote&", "dokid="],
             "https://www.rade.kommune.no": ["response=mote&", "dokid="],
             "http://innsyn.royrvik.kommune.no": ["/motedag", "getDocument?"],
             "http://www.rodoy.kommune.no": ["artikkel.aspx", "/Handlers/"],
@@ -78,41 +69,61 @@ pdfCrawl = {"http://93.89.112.77": ["DmbMeetingDetail", "document?"],
             "https://tjenester.oslo.kommune.no": ["moetemappe=", "api/fil"], 
             "https://oskommune.no": ["response=mote&", "dokid="],
             "https://www.odda.kommune.no": ["response=mote&", "dokid="],
-            "https://innsyn.nordre-land.kommune.no":
-            ["response=mote&", "dokid="],
-            "http://innsyn.nissedal.kommune.no/":
-            ["DmbMeetingDetail", "document?"],
+            "https://innsyn.nordre-land.kommune.no": ["response=mote&", "dokid="],
+            "http://innsyn.nissedal.kommune.no": ["DmbMeetingDetail", "document?"],
             "https://www.nesset.kommune.no": [None,".pdf"],
-            "https://innsyn.nesna.kommune.no": ["//td[@data-utvalg='KOMST15'",
-                                                "dokid="],
+            "https://innsyn.nesna.kommune.no": ["//td[@data-utvalg='KOMST15'", "dokid="],
             "https://www.naustdal.kommune.no": ["response=mote&", "dokid="],
-            "http://einnsyn.meraker.kommune.no":
-            ["UtvalgmoeteDetail", "ShowUtvalg"],
-            "https://prokomresources.prokomcdn.no": ["//a[contains(@href,"
-                                                                  "'moteid')]",
-                                                     "//a[@class="
-                                                     "'list-group-item']"],
+            "http://einnsyn.meraker.kommune.no": ["UtvalgmoeteDetail", "ShowUtvalg"],
+            "https://prokomresources.prokomcdn.no": ["//a[contains(@href,'moteid')]","//a[@class='list-group-item']"], # selenium
             "https://www.lunner.kommune.no": ["mote-kommunestyret", ".pdf"],
-            "http://innsyn.lillesand.kommune.no/" :["response=mote&",
-                                                    "dokid="],
-            "http://www.lebesby.kommune.no": ["mote-kommunestyret", ".pdf"],
-            "http://www.kvafjord.kommune.no":
-            ["UtvalgmoeteDetail", "ShowUtvalg"],
+            "http://innsyn.lillesand.kommune.no/" :["response=mote&", "dokid="],
+            "http://www.lebesby.kommune.no": ["-mote-", ".pdf"],
+            "http://www.kvafjord.kommune.no": ["UtvalgmoeteDetail", "ShowUtvalg"],
             "http://www.kviteseid.kommune.no": [None, "kommunestyret/2018"],
             "https://www.kvam.no": ["response=mote&", "dokid="],
-            "http://innsyn.kristiansund.kommune.no/": ["DmbMeetingDetail",
-                                                       "document?"],
-            "http://postlister.avjovarre.no/": ["DmbMeetingDetail", 
-                                                "document?"],
+            "http://innsyn.kristiansund.kommune.no": ["DmbMeetingDetail", "document?"],
+            "http://postlister.avjovarre.no": ["DmbMeetingDetail", "document?"],
             "http://159.171.48.136": ["DmbMeetingDetail", "document?"],
             "http://217.168.95.230": ["DmbMeetingDetail", "document?"],
             "http://innsyn.hoylandet.kommune.no":["/motedag", "getDocument?"],
             "https://www.horten.kommune.no": ["response=mote&", "dokid="],
             "http://www.holmestrand.kommune.no": ["response=mote&", "dokid="],
-            "http://www.heroy-no.kommune.no": ["mote-kommunestyret", ".pdf"],
-            
-            
-            
+            "http://www.heroy-no.kommune.no": ["-mote-", ".pdf"],
+            "http://innsyn.grong.kommune.no": ["/motedag", "getDocument?"],
+            "http://www.granvin.kommune.no": ["moteid=", "ra-pdf"],
+            "http://innsyn.gjemnes.kommune.no": ["DmbMeetingDetail", "document?"],
+            "https://www.giske.kommune.no": ["response=mote&", "dokid="],
+            "http://innsyn.fyresdal.kommune.no": ["DmbMeetingDetail", "document?"],
+            "http://www.finnoy.kommune.no": ["response=mote&", "dokid="],
+            "http://innsyn.eide.kommune.no": ["DmbMeetingDetail", "document?"],
+            "https://eid.kommune.no": ["response=mote&", "dokid="],
+            "http://innsyn.batsfjord.kommune.no": ["/motedag", "getDocument?"],
+            "https://www.baerum.kommune.no": ["response=mote&", "dokid="],
+            "http://159.171.48.136/": ["DmbMeetingDetail", "document?"],
+            "https://bremanger.kommune.no": ["response=mote&", "dokid="],
+            "https://www.bokn.kommune.no": ["response=mote&", "dokid="],
+            "https://aspephpub.public.cloudservices.no": ["DmbMeetingDetail", "document?"],
+            "http://innsyn.averoy.kommune.no/": ["DmbMeetingDetail", "document?"],
+            "https://www.austevoll.kommune.no/": ["response=mote&", "dokid="],
+            "https://innsyn.ddv.no/": ["DmbMeetingDetail", "document?"],
+            "http://www.as.kommune.no/": ["-mote-", ".pdf"],
+            "http://einnsyn.sate.no": ["DmbMeetingDetail", "document?"],
+            "https://www.oystre-slidre.kommune.no": ["response=mote&", "dokid="],
+            "http://www.oyer.kommune.no": ["-mote-", ".pdf"],
+            "http://innsyn.ovre-eiker.kommune.no": ["DmbMeetingDetail", "document?"],
+            "https://www.orskog.kommune.no": ["response=mote&", "dokid="],
+            "http://innsyn.valer-of.kommune.no": ["//td[@data-utvalg='KST'", "dokid="], # selenium
+            "https://postliste.regiondata.no": ["DmbMeetingDetail", "document?"],
+            "https://vagsoy.kommune.no": ["response=mote&", "dokid="],
+            "https://vagan.kommune.no": ["response=mote&", "dokid="],
+            "http://innsyn.vikna.kommune.no": ["DmbMeetingDetail", "document?"], # Kun kommunestyret
+            "http://www.vik.e-kommune.no": ["response=mote&", "dokid="],
+            "https://www.vestvagoy.kommune.no": ["response=mote&", "dokid="],
+            "http://www2.vestre-toten.kommune.no": ["&Expand=3","opendocument"],
+            "https://www.vestre-slidre.kommune.no": ["response=mote&", "dokid="],
+            "https://www.vestby.kommune.no": ["-mote-", ".pdf"],
+            "http://217.168.95.230": ["DmbMeetingDetail", "document?"],
             
             }
 
@@ -298,8 +309,8 @@ class Kommune:
             """Finds all meetings on meeting calender site and returnes them as a list"""
             links: list = BS(self.geturl().content, "lxml").findAll("a", href=True)
             meetings: list = [self.base + a.get("href") for a in links if
-                              pdfCrawl[self.base][1].lower() in
-                              a.get("href").lower]
+                              pdfCrawl[self.base][0].lower() in
+                              a.get("href").lower()]
             return meetings
 
     def getMoterSel(self):
@@ -319,7 +330,9 @@ class Kommune:
                 driver.quit()
                 return meetings
             else:
+                # remove this for loop to get all commities
                 for i in td:
+                # ---
                     try:
                         ids.append(i.find_element_by_class_name("fc-content"))
                     except:
