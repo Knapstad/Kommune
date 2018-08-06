@@ -123,7 +123,9 @@ pdfCrawl = {"http://93.89.112.77": ["DmbMeetingDetail", "document?"],
             "http://www2.vestre-toten.kommune.no": ["&Expand=3","opendocument"],
             "https://www.vestre-slidre.kommune.no": ["response=mote&", "dokid="],
             "https://www.vestby.kommune.no": ["-mote-", ".pdf"],
-            "http://217.168.95.230": ["DmbMeetingDetail", "document?"],
+            "http://jupiter.vefsn.kommune.no": ["/motedag", "getdocument"],
+            "http://innsyn.v-man.no": ["response=mote&", "dokid="],
+            
             
             }
 
@@ -369,3 +371,32 @@ class Kommune:
 #        print("long")
 #        
            
+            
+def ny():
+    try:
+        json.dump(innsyn,open("innsyn.json","w"))
+        print(innsyn[-1])
+        ndriv.get(innsyn[-1])
+        done.append(innsyn[-1])
+        json.dump(done,open("done.json","w"))
+        print(str(round(len(done)/len(kommune)*100,3)) + "% ferdig")
+        nå=innsyn.pop(-1)
+       
+                
+    except Exception as E:
+        json.dump(innsyn,open("innsyn.json","w"))
+        print(E, E.__doc__)
+        print("ingen url")
+        done.append(innsyn[-1])
+        json.dump(done,open("done.json","w"))
+        print(str(round(len(done)/len(kommune)*100,3)) + "% ferdig")
+        innsyn.pop(-1)
+
+ndriv = webdriver.Chrome()
+
+kommune = json.load(open("kommune.json", "r"))
+innsyn=[kommune[i][0] for i in kommune if "http" not in kommune[i][2]]
+innsyn = json.load(open("innsyn.json","r"))
+
+
+
