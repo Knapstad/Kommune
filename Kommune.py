@@ -6,6 +6,7 @@ Created on Tue Jul 17 14:21:32 2018
 """
 
 import os
+import csv
 import requests
 import re
 import time
@@ -14,121 +15,51 @@ from bs4 import BeautifulSoup as BS
 import json
 from datetime import date
 from selenium import webdriver
+import urllib.parse
+import _pickle
+
+from concurrent.futures import ThreadPoolExecutor
+
 
 requests.packages.urllib3.disable_warnings()
-
 proxies = json.load(open("config_.json", "r"))["proxies"]
 
-# helper funtions
 
+# helper funtions
+#ndriv = webdriver.Chrome()
+
+kommune = json.load(open("kommune.json", "r"))
+innsyn = json.load(open("innsyn.json", "r"))
+done = json.load(open("done.json","r"))
+pdfLog = json.load(open("pdfLog.json", "r"))
+pdfCrawl= json.load(open("pdfCrawl.json", "r"))
+sendt = json.load(open("sendt.json", "r"))
+with open('behandlede_kommuner.pickle', 'rb') as handle:
+    behandlede_kommuner = _pickle.load(handle)
 
 def thisday() -> str:
     now = date.today()
-    return(f"{now.day}-{now.month}-{now.year}")
+    return (f"{now.day}-{now.month}-{now.year}")
 
-
-pdfCrawl = {"http://93.89.112.77": ["DmbMeetingDetail", "document?"],
-            "https://www.vadso.kommune.no": ["response=mote&", "dokid="],
-            "http://www.alstahaug.kommune.no": ["-mote-", ".pdf"],
-            "http://www.alta.kommune.no": ["-mote-", ".pdf"],
-            "http://innsyn.ekommune.no": ["response=mote&", "dokid="],
-            "http://www.asnes.kommune.no": ["response=mote&", "dokid="],
-            "http://159.171.0.170": ["DmbMeetingDetail", "document?"],
-            "http://innsyn.alesund.kommune.no": ["response=mote&", "dokid="],
-            "http://einnsyn.fosendrift.no": ["DmbMeetingDetail", "document?"],
-            "https://www.ostre-toten.kommune.no": ["response=mote&", "dokid="],
-            "http://84.49.104.166": ["DmbMeetingDetail", "document?"],
-            "http://www.vaaler-he.kommune.no": ["response=mote&", "dokid="],
-            "http://www.varoy.kommune.no": ["response=mote&", "dokid="],
-            "https://innsyn.ssikt.no": ["DmbMeetingDetail", "document?"],
-            "http://94.139.92.229": ["DmbMeetingDetail", "document?"],
-            "https://einnsyn.evps.no": ["DmbMeetingDetail", "document?"],
-            "http://opengov.cloudapp.net": ["meetings/details", ".pdf"],
-            "https://innsyn.ssikt.no": ["DmbMeetingDetail", "document?"],
-            "http://159.171.48.136": ["DmbMeetingDetail", "document?"],
-            "https://www.ulvik.kommune.no": ["response=mote&", "dokid="],
-            "https://innsyn.trondheim.kommune.no": ["//td[@data-utvalg='BYS'", "dokid="],  # selenium
-            "https://innsyn.tromso.kommune.no": ["//td[@data-utvalg='KST'", "dokid="],   # selenium
-            "http://www.tokke.kommune.no": [None, "/kommunestyret/"],
-            "https://www.faerder.kommune.no": ["response=mote&", "dokid="],
-            "http://einnsyn.tana.kommune.no": ["DmbMeetingDetail", "document?"],
-            "http://innsyn.surnadal.kommune.no": ["DmbMeetingDetail", "document?"],
-            "http://innsyn.sunndal.kommune.no": ["DmbMeetingDetail", "document?"],
-            "https://www.sund.kommune.no": ["response=mote&", "dokid="],
-            "https://www.sortland.kommune.no": ["response=mote&", "dokid="],
-            "https://nyttinnsyn.sola.kommune.no": ["response=mote&", "dokid="],
-            "https://www.skodje.kommune.no": ["response=mote&", "dokid="],
-            "http://innsyn.seljord.kommune.no": ["DmbMeetingDetail", "document?"],
-            "https://innsyn.sandefjord.kommune.no": ["response=mote&", "dokid="],
-            "https://www.rade.kommune.no": ["response=mote&", "dokid="],
-            "http://innsyn.royrvik.kommune.no": ["/motedag", "getDocument?"],
-            "http://www.rodoy.kommune.no": ["artikkel.aspx", "/Handlers/"],
-            "https://www1.ringsaker.kommune.no": ["response=mote&", "dokid="],
-            "http://www.ringebu.kommune.no": ["response=mote&", "dokid="],
-            "http://www.re.kommune.no/innsyn": ["response=mote&", "dokid="],
-            "https://tjenester.oslo.kommune.no": ["moetemappe=", "api/fil"], 
-            "https://oskommune.no": ["response=mote&", "dokid="],
-            "https://www.odda.kommune.no": ["response=mote&", "dokid="],
-            "https://innsyn.nordre-land.kommune.no": ["response=mote&", "dokid="],
-            "http://innsyn.nissedal.kommune.no": ["DmbMeetingDetail", "document?"],
-            "https://www.nesset.kommune.no": [None,".pdf"],
-            "https://innsyn.nesna.kommune.no": ["//td[@data-utvalg='KOMST15'", "dokid="],
-            "https://www.naustdal.kommune.no": ["response=mote&", "dokid="],
-            "http://einnsyn.meraker.kommune.no": ["UtvalgmoeteDetail", "ShowUtvalg"],
-            "https://prokomresources.prokomcdn.no": ["//a[contains(@href,'moteid')]","//a[@class='list-group-item']"], # selenium
-            "https://www.lunner.kommune.no": ["mote-kommunestyret", ".pdf"],
-            "http://innsyn.lillesand.kommune.no/" :["response=mote&", "dokid="],
-            "http://www.lebesby.kommune.no": ["-mote-", ".pdf"],
-            "http://www.kvafjord.kommune.no": ["UtvalgmoeteDetail", "ShowUtvalg"],
-            "http://www.kviteseid.kommune.no": [None, "kommunestyret/2018"],
-            "https://www.kvam.no": ["response=mote&", "dokid="],
-            "http://innsyn.kristiansund.kommune.no": ["DmbMeetingDetail", "document?"],
-            "http://postlister.avjovarre.no": ["DmbMeetingDetail", "document?"],
-            "http://159.171.48.136": ["DmbMeetingDetail", "document?"],
-            "http://217.168.95.230": ["DmbMeetingDetail", "document?"],
-            "http://innsyn.hoylandet.kommune.no":["/motedag", "getDocument?"],
-            "https://www.horten.kommune.no": ["response=mote&", "dokid="],
-            "http://www.holmestrand.kommune.no": ["response=mote&", "dokid="],
-            "http://www.heroy-no.kommune.no": ["-mote-", ".pdf"],
-            "http://innsyn.grong.kommune.no": ["/motedag", "getDocument?"],
-            "http://www.granvin.kommune.no": ["moteid=", "ra-pdf"],
-            "http://innsyn.gjemnes.kommune.no": ["DmbMeetingDetail", "document?"],
-            "https://www.giske.kommune.no": ["response=mote&", "dokid="],
-            "http://innsyn.fyresdal.kommune.no": ["DmbMeetingDetail", "document?"],
-            "http://www.finnoy.kommune.no": ["response=mote&", "dokid="],
-            "http://innsyn.eide.kommune.no": ["DmbMeetingDetail", "document?"],
-            "https://eid.kommune.no": ["response=mote&", "dokid="],
-            "http://innsyn.batsfjord.kommune.no": ["/motedag", "getDocument?"],
-            "https://www.baerum.kommune.no": ["response=mote&", "dokid="],
-            "http://159.171.48.136/": ["DmbMeetingDetail", "document?"],
-            "https://bremanger.kommune.no": ["response=mote&", "dokid="],
-            "https://www.bokn.kommune.no": ["response=mote&", "dokid="],
-            "https://aspephpub.public.cloudservices.no": ["DmbMeetingDetail", "document?"],
-            "http://innsyn.averoy.kommune.no/": ["DmbMeetingDetail", "document?"],
-            "https://www.austevoll.kommune.no/": ["response=mote&", "dokid="],
-            "https://innsyn.ddv.no/": ["DmbMeetingDetail", "document?"],
-            "http://www.as.kommune.no/": ["-mote-", ".pdf"],
-            "http://einnsyn.sate.no": ["DmbMeetingDetail", "document?"],
-            "https://www.oystre-slidre.kommune.no": ["response=mote&", "dokid="],
-            "http://www.oyer.kommune.no": ["-mote-", ".pdf"],
-            "http://innsyn.ovre-eiker.kommune.no": ["DmbMeetingDetail", "document?"],
-            "https://www.orskog.kommune.no": ["response=mote&", "dokid="],
-            "http://innsyn.valer-of.kommune.no": ["//td[@data-utvalg='KST'", "dokid="], # selenium
-            "https://postliste.regiondata.no": ["DmbMeetingDetail", "document?"],
-            "https://vagsoy.kommune.no": ["response=mote&", "dokid="],
-            "https://vagan.kommune.no": ["response=mote&", "dokid="],
-            "http://innsyn.vikna.kommune.no": ["DmbMeetingDetail", "document?"], # Kun kommunestyret
-            "http://www.vik.e-kommune.no": ["response=mote&", "dokid="],
-            "https://www.vestvagoy.kommune.no": ["response=mote&", "dokid="],
-            "http://www2.vestre-toten.kommune.no": ["&Expand=3","opendocument"],
-            "https://www.vestre-slidre.kommune.no": ["response=mote&", "dokid="],
-            "https://www.vestby.kommune.no": ["-mote-", ".pdf"],
-            "http://jupiter.vefsn.kommune.no": ["/motedag", "getdocument"],
-            "http://innsyn.v-man.no": ["response=mote&", "dokid="],
+def save():
+        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
+        json.dump(sendt, open("sendt.json","w"))
+        json.dump(pdfLog, open("pdfLog.json","w"))
+        json.dump(kommune, open("kommune.json","w"))
+        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
+        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
+        json.dump(done, open("done.json","w"))
+        json.dump(innsyn, open("innsyn.json","wb"))
+        try:
+            with open('kommune\\behandlede_kommuner.pickle', "wb") as handle:
+                _pickle.dump(behandlede_kommuner, handle, -1)
+        except MemoryError as E:
+            print(E)
+            for kommune in behandlede_kommuner.keys():
+                with open("kommune\\behandlede_kommuner_"+kommune.lower()+".pickle", "wb") as name:
+                    _pickle.dump(behandlede_kommuner[kommune], name, -1)
             
             
-            }
-
 
 # start Class
 
@@ -142,8 +73,10 @@ class Kommune:
     def __init__(self, url: str, name: str = None) -> None:
         self.name: str = name
         self.url: str = url
+        self.regex2: str = r"https?:[\/\/].+[\/]"
         self.regex: str = r"^https?:\/\/[^\/]+"
         self.base: str = (re.search(self.regex, self.url).group())
+        self.base2: str = (re.search(self.regex2, self.url).group())        
         self.pdf: str = None
         self.type: str = None
         self.cash: list = ["Kommunal garanti", "Kommunal kausjon",
@@ -152,18 +85,21 @@ class Kommune:
                            "Simpelgaranti", "Simpelkausjon",
                            "Selvskyldnergaranti", "Selvskyldner garanti",
                            "Selvskyldner kausjon", "Selvskyldnerkausjon",
-                           "Lån", "Gjeld"]
+                           "Lånepapir", "Lånedokument", "Gjeldsgrad",
+                           "Gjeldsandel", "Selskapsavtale", "Sjølvskuldnarkausjon"
+                           "Garanti"]
+        self.treff=[]
+        
         self.pdfLog: dict = {}
-        self.type: str = None
+        
         try:
-            self.pdfLog: dict = json.load(open("PdfLog.json", "r"))
+            self.pdfLog: dict = json.load(open("pdfLog.json", "r"))
         except FileNotFoundError:
             self.pdfLog: dict = {}
 
-
     def __str__(self) -> str:
         representation = f"""
-            {self.name}kommune
+            {self.name} kommune
             url = {self.url}
             base = {self.base}
             pdf = {self.pdf} pdf'er
@@ -187,6 +123,18 @@ class Kommune:
                 i += 1
             return resp
 
+    def find_mote_sogne(self, url: str = None):
+        if not url:
+            url = self.url
+        resp: requests.models.Response = self.geturl(url)
+        if str(resp) == "<Response [200]>":
+            links: list = BS(self.geturl(url).text, "lxml").findAll("a",
+                             href=True)
+            meetings: list = [self.base + "/utvalg/" + a.get("href") for a 
+                              in links if "KommunestyretzzM[oete-201" in
+                              a.get("href")]
+            return meetings
+
     def findPDFSel(self, url: str = None) -> List:
         if not url:
             url = self.url
@@ -204,13 +152,18 @@ class Kommune:
     def findPDF(self, url: str = None) -> List:
         if not url:
             url = self.url
+        if "https://" not in url.lower() and "http://" not in url.lower():
+            url = self.base + url
+        if "https://" not in url.lower() and "http://" not in url.lower() and \
+        "innsyn.e-kommne" in url.lower():
+            url =self.base2 + url    
         resp: requests.models.Response = self.geturl(url)
         if str(resp) == "<Response [200]>":
             links: list = BS(self.geturl(url).text, "lxml").findAll("a",
-                             href=True)
-            pdf: list = [a.get("href") for a in links if ".pdf"
+                                                                    href=True)
+            pdf: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in links if ".pdf"
                          in a.get("href").lower() or pdfCrawl[self.base][1]
-                         .lower()
+                             .lower()
                          in a.get("href").lower()]
             if not self.pdf:
                 self.pdf = str(len(pdf))
@@ -218,32 +171,30 @@ class Kommune:
                 self.pdf = str(int(self.pdf) + len(pdf))
         else:
             pdf: list = [str(url), str(resp)]
-            try:
-                with open("error.json", "r") as f:
-                    error = json.load(f)
-            except FileNotFoundError:
-                error = {}
-            error.setdefault(thisday, [])
-            error[thisday].append(pdf)
-            with open("error.json", "w") as f:
-                json.dump(error, f)
         return pdf
 
     def getPDF(self, url: str = None) -> None:
         """Saves pdf from url"""
         if not url:
             url = self.url
+                
+        if "https://" not in url.lower() and "http://" not in url.lower() and \
+                        "document.ash" in url.lower():
+            url =self.base2 + url
+            
         if "https://" not in url.lower() and "http://" not in url.lower():
             url = self.base + url
+        
         try:
             resp = self.geturl(url)
             if str(resp) == "<Response [200]>":
                 with open("temp.pdf", "wb") as file:
                     file.write(resp.content)
             else:
+                self.pdfLog[url] = [str(resp,)+ "No pdf"]
                 raise PdfError("no pdf found")
         except Exception as E:
-            return(str(E))
+            print(str(E))
 
     def readPDF(self):
         """uses pdftotext comandline to convert to text"""
@@ -255,69 +206,88 @@ class Kommune:
     def findcash(self, url=None) -> Dict:
         """Iterates over all pdf's and returnes a dictionary of link and
         keyword when cash-words are pressent in the pdf"""
-
-        gold = {}
-        if not url:
-            url = self.url
-        #if self.type == "einnsyn":
-        for i in self.getMoter():
-            for y in self.findPDF(i):
-                print(f"møte {i}, sak {y}")
-                if str(y) in self.pdfLog:
-                    pass
-                else:
-                    if self.getPDF(y) == "no pdf found":
-                        self.pdfLog.setdefault(str(y), ["0",
-                                               "no pdf error"])
-                    else:
-                        self.getPDF(y)
-                        self.pdfLog.setdefault(str(y), ["0"])
-                        tekst = self.readPDF()
-                        for s in self.cash:
-                            if s in tekst:
-                                gold.setdefault(str(y), [])
-                                self.pdfLog[str(y)][0] = "1"
-                                self.pdfLog[str(y)].append(s)
-                                print(i, s)
-                                gold[str(y)].append(s)
-#        else:
-#            for i in self.findPDF(url):
-#                print(i)
-#                if str(i) in self.pdfLog:
-#                    pass
-#                else:
-#                    if self.getPDF(y) == "no pdf found":
-#                            self.pdfLog.setdefault(str(y), ["0",
-#                                                   "no pdf error"])
-#                    else:
-#                        self.pdfLog.setdefault(str(i), ["0"])
-#                        tekst = self.readPDF()
-#                        for s in self.cash:
-#                            if s in self.readPDF():
-#                                gold.setdefault(str(y), [])
-#                                self.pdfLog[str(i)][0] = "1"
-#                                self.pdfLog[str(i)].append(s)
-#                                print(i, s)
-#                                gold[str(y)].append(s)
-
-        with open("PdfLog.json", "w") as f:
-            json.dump(self.pdfLog, f)
-        return gold
-
+        try:
+            
+            if not url:
+                url = self.url
+            if "//" in str(pdfCrawl[self.base][0]):
+                for i in self.getMoterSel():
+                    try:
+                        for y in self.findPDFSel(i):
+                            if str(y) in self.pdfLog:
+                                #print("passing")
+                                pass
+                                
+                            else:
+                                doc = self.getPDF(y)
+                                if doc == "no pdf found":
+                                    self.pdfLog.setdefault(str(y), ["0",
+                                                                    "no pdf error"])
+                                else:
+                                    self.pdfLog.setdefault(str(y), ["0"])
+                                    tekst = self.readPDF()
+                                    for s in self.cash:
+                                        if s.lower() in tekst.lower():
+                                            self.pdfLog[str(y)][0] = "1"
+                                            self.pdfLog[str(y)].append(s)
+#                                            print(y, s)
+                                            
+                
+                        
+                    except:
+                        with open("PdfLog.json", "w") as f:
+                            json.dump(self.pdfLog, f)
+                       
+            else:
+                for i in self.getMoter():
+                    try:
+                        for y in self.findPDF(i):
+                            if str(y) in self.pdfLog:
+                               # print("passing")
+                                pass
+                            else:
+                                if self.getPDF(y) == "no pdf found":
+                                    self.pdfLog.setdefault(str(y),
+                                                           ["0",
+                                                            "no pdf error"])
+                                else:
+                                    self.getPDF(y)
+                                    self.pdfLog.setdefault(str(y), ["0"])
+                                    tekst = self.readPDF()
+                                    for s in self.cash:
+                                        if s.lower() in tekst.lower():
+                                            self.pdfLog[str(y)][0] = "1"
+                                            self.pdfLog[str(y)].append(s)
+                                            
+                
+                        
+                    except:
+                        with open("PdfLog.json", "w") as f:
+                            json.dump(self.pdfLog, f)
+                       
+            with open("PdfLog.json", "w") as f:
+                    json.dump(self.pdfLog, f)
+            
+            
+        except Exception as E:
+            with open("PdfLog.json", "w") as f:
+                            json.dump(self.pdfLog, f)
+            print(E)
     def getMoter(self):
         if pdfCrawl[self.base][0] is None:
-            pass
+            return [self.url]
         else:
             """Finds all meetings on meeting calender site and returnes them as a list"""
+            resp: requests.models.Response = self.geturl()
             links: list = BS(self.geturl().content, "lxml").findAll("a", href=True)
-            meetings: list = [self.base + a.get("href") for a in links if
+            meetings: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in links if
                               pdfCrawl[self.base][0].lower() in
                               a.get("href").lower()]
             return meetings
 
     def getMoterSel(self):
         if pdfCrawl[self.base][0] is None:
-            pass
+            return [None]
         else:
             options = webdriver.ChromeOptions()
             options.add_argument('headless')
@@ -334,69 +304,48 @@ class Kommune:
             else:
                 # remove this for loop to get all commities
                 for i in td:
-                # ---
+                    # ---
                     try:
                         ids.append(i.find_element_by_class_name("fc-content"))
                     except:
                         pass
-                print(len(ids))
                 meetings: list = [self.url + "motedag?offmoteid=" +
                                   i.get_attribute("id") for i in ids]
                 driver.quit()
-                return meetings
-
-
-
-#for i in kommune:
-#    try:
-#        print("pass check")
-#        if len(kommune[i][2]) >= 11:
-#            print("willpass")
-#        else:
-#            try:
-#                a = geturl(kommune[i][0]+"innsyn")
-#                print(a, "checked url")
-#            except:
-#                a= "noresponse"
-#                print(a)
-#            
-#            if str(a) == "<Response [200]>":
-#                print("valid response, appending url")
-#                kommune[i][2] = a.url
-#            else:
-#                print("innvalid response, appending response")
-#                kommune[i][2] = a
-#            
-#    except:
-#        print("long")
-#        
-           
+                return meetings 
+    
+    def finn_treff(self):
+        self.treff =  []
+        for i in pdfLog.keys():
+            if pdfLog[i][0] == "1" and i not in sendt:
+                #print(i)
+                self.treff.append([i, pdfLog[i]])
             
-def ny():
-    try:
-        json.dump(innsyn,open("innsyn.json","w"))
-        print(innsyn[-1])
-        ndriv.get(innsyn[-1])
-        done.append(innsyn[-1])
-        json.dump(done,open("done.json","w"))
-        print(str(round(len(done)/len(kommune)*100,3)) + "% ferdig")
-        nå=innsyn.pop(-1)
-       
-                
-    except Exception as E:
-        json.dump(innsyn,open("innsyn.json","w"))
-        print(E, E.__doc__)
-        print("ingen url")
-        done.append(innsyn[-1])
-        json.dump(done,open("done.json","w"))
-        print(str(round(len(done)/len(kommune)*100,3)) + "% ferdig")
-        innsyn.pop(-1)
+def kjor():
+    for i in kommune:
+        if "http" in kommune[i][2]:
+            a=Kommune(kommune[i][2], i)
+            a.findcash()
+            a.finn_treff()
+#            behandlede_kommuner[i] = a
 
-ndriv = webdriver.Chrome()
+def finn_treff():
+    treff =  []
+    for i in pdfLog.keys():
+        if pdfLog[i][0] == "1" and i not in sendt:
+            #print(i)
+            treff.append([i, pdfLog[i]])
+    return treff
+            
 
-kommune = json.load(open("kommune.json", "r"))
-innsyn=[kommune[i][0] for i in kommune if "http" not in kommune[i][2]]
-innsyn = json.load(open("innsyn.json","r"))
+    
 
+def add_to_sendt(file):
+   for i in file:
+       if i[0] not in sendt:
+           sendt.append(i[0])
 
-
+def print_treff(file):
+    with open(f"kommune{thisday()}.csv","w") as f:
+        write = csv.writer(f)
+        write.writerows(file)
