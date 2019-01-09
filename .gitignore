@@ -8,6 +8,7 @@ __pycache__/
 *$py.class
 config_*
 .idea
+*.pickle
 
 # C extensions
 *.so
@@ -110,9 +111,9 @@ venv.bak/
 .mypy_cache/
 
 # docs
-*.txt
-*.pdf
-*.json
+#*.txt
+#*.pdf
+#*.json
 
 ### Python Patch ###
 .venv/
