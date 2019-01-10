@@ -34,33 +34,16 @@ done = json.load(open("done.json","r"))
 pdfLog = json.load(open("pdfLog.json", "r"))
 pdfCrawl= json.load(open("pdfCrawl.json", "r"))
 sendt = json.load(open("sendt.json", "r"))
-with open('behandlede_kommuner.pickle', 'rb') as handle:
-    behandlede_kommuner = _pickle.load(handle)
+pdf_set = json.load(open("pdf_set.json","r"))
+mote_set= json.load(open("mote_set.json","r"))
+kommuneliste= json.load(open("kommuneliste.json","r"))
+#with open('behandlede_kommuner.pickle', 'rb') as handle:
+#    behandlede_kommuner = _pickle.load(handle)
 
 def thisday() -> str:
     now = date.today()
     return (f"{now.day}-{now.month}-{now.year}")
-
-
-def save():
-        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
-        json.dump(sendt, open("sendt.json","w"))
-        json.dump(pdfLog, open("pdfLog.json","w"))
-        json.dump(kommune, open("kommune.json","w"))
-        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
-        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
-        json.dump(done, open("done.json","w"))
-        json.dump(innsyn, open("innsyn.json","wb"))
-        try:
-            with open('kommune\\behandlede_kommuner.pickle', "wb") as handle:
-                _pickle.dump(behandlede_kommuner, handle, -1)
-        except MemoryError as E:
-            print(E)
-            for kommune in behandlede_kommuner.keys():
-                with open("kommune\\behandlede_kommuner_"+kommune.lower()+".pickle", "wb") as name:
-                    _pickle.dump(behandlede_kommuner[kommune], name, -1)
-            
-            
+           
 # start Class
 
 class PdfError(LookupError):
@@ -123,7 +106,7 @@ class Kommune:
     def get_html_selenium(self, url: str = None) -> str:
         if not url:
             url = self.url
-        """Finds all pdfs on site and returnes them as a list"""
+        """Gets html and returnes using a chromium instance"""
         options = webdriver.ChromeOptions()
         options.add_argument('headless')
         options.add_argument('--window-size=1920,1080')
@@ -192,6 +175,7 @@ class Kommune:
                 raise PdfError("no pdf found")
         except Exception as E:
             print(str(E))
+            return E
 
     def readPDF(self):
         """uses pdftotext comandline to convert to text"""
@@ -395,6 +379,33 @@ class Kommune:
                 #print(i)
                 self.treff.append([i, pdfLog[i]])
             
+def get_url(url: str = None, re: int = 3) -> requests.models.Response:
+        """gets url with proxysettings and returnes response"""
+        resp = requests.get(str(url), proxies=proxies, verify=False)
+        if str(resp) == "<Response [200]>":
+            return resp
+        else:
+            i = 1
+            while i < re + 1:
+                time.sleep(2)
+                resp = requests.get(str(url), proxies=proxies, verify=False)
+                if str(resp) == "<Response [200]>":
+                    return resp
+                i += 1
+            return resp
+
+
+def sjekk_mote_url(url):
+    resp = get_url(url)
+    links: list = BS(resp.content, "html").findAll("a", href=True)
+    not_in_list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in links if
+                    any(sub in a.get("href") for sub in mote_set)]
+    return not_in_list
+
+
+
+
+
 def kjor():
     for i in kommune:
         if "http" in kommune[i][2]:
@@ -420,3 +431,24 @@ def print_treff(file):
     with open(f"kommune{thisday()}.csv","w") as f:
         write = csv.writer(f)
         write.writerows(file)
+
+def save():
+        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
+        json.dump(sendt, open("sendt.json","w"))
+        json.dump(pdfLog, open("pdfLog.json","w"))
+        json.dump(kommune, open("kommune.json","w"))
+        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
+        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
+        json.dump(done, open("done.json","w"))
+        json.dump(innsyn, open("innsyn.json","w"))
+        json.load(pdf_set, open("pdf_set.json","w"))
+        json.load(mote_set, open("mote_set.json","w"))
+       # try:
+        #    with open('kommune\\behandlede_kommuner.pickle', "wb") as handle:
+       #         _pickle.dump(behandlede_kommuner, handle, -1)
+       # except MemoryError as E:
+        #    print(E)
+        #    for kommune in behandlede_kommuner.keys():
+         #       with open("kommune\\behandlede_kommuner_"+kommune.lower()+".pickle", "wb") as name:
+          #          _pickle.dump(behandlede_kommuner[kommune], name, -1)
+            
