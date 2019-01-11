@@ -311,7 +311,6 @@ class Kommune:
                 json.dump(self.pdfLog, f)
         with open("Gold.json", "w") as f:
                 json.dump(gold, f)
-        return gold
 
 
     def getMoter(self):
@@ -383,14 +382,24 @@ def get_url(url: str = None, re: int = 3) -> requests.models.Response:
 
 def get_mote_url(url: str) -> list:
     resp = get_url(url)
-    links: list = BS(resp.content, "html").findAll("a", href=True)
+    elements: list = BS(resp.content, "html").findAll("a", href=True)
+    links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
     return links
 
 
 def sjekk_mote_url(url: str) -> list:
-    not_in_list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in links if
-                    not any(sub in a.get("href") for sub in mote_set)]
-    return not_in_list
+    return any(sub in url for sub in mote_set)
+
+def find_non_standard_kommune():
+    non_standard_kommune = []
+    for kommune in kommuneliste:
+        moter = get_mote_url(kommune[-1])
+        if any([sjekk_mote_url(mote) for mote in moter]):
+            pass
+        else:
+            non_standard_kommune.append(kommune)
+    return non_standard_kommune
+            
 
 
 def kjor() -> None:
