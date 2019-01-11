@@ -270,8 +270,6 @@ class Kommune:
                                         self.pdfLog[str(y)].append(s)
                                         print(i, s)
                                         gold[y].append([s])
-            
-                    
                 except:
                     with open("PdfLog.json", "w") as f:
                         json.dump(self.pdfLog, f)
@@ -303,12 +301,8 @@ class Kommune:
                 except:
                     with open("PdfLog.json", "w") as f:
                         json.dump(self.pdfLog, f)
-                    with open("Gold.json", "w") as f:
-                        json.dump(gold, f)
         with open("PdfLog.json", "w") as f:
                 json.dump(self.pdfLog, f)
-        with open("Gold.json", "w") as f:
-                json.dump(gold, f)
 
 
     def getMoter(self):
@@ -448,4 +442,3 @@ def save():
         #    for kommune in behandlede_kommuner.keys():
          #       with open("kommune\\behandlede_kommuner_"+kommune.lower()+".pickle", "wb") as name:
           #          _pickle.dump(behandlede_kommuner[kommune], name, -1)
-            
