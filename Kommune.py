@@ -395,18 +395,21 @@ def get_url(url: str = None, re: int = 3) -> requests.models.Response:
             return resp
 
 
-def sjekk_mote_url(url):
+def get_mote_url(url: str) -> list:
     resp = get_url(url)
     links: list = BS(resp.content, "html").findAll("a", href=True)
+    return links
+
+def sjekk_mote_url(url:: str) -> list:
     not_in_list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in links if
-                    any(sub in a.get("href") for sub in mote_set)]
+                    not any(sub in a.get("href") for sub in mote_set)]
     return not_in_list
 
 
 
 
 
-def kjor():
+def kjor() -> None:
     for i in kommune:
         if "http" in kommune[i][2]:
             a=Kommune(kommune[i][2], i)
