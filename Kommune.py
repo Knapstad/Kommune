@@ -34,7 +34,7 @@ done = json.load(open("done.json","r"))
 pdfLog = json.load(open("pdfLog.json", "r"))
 pdfCrawl= json.load(open("pdfCrawl.json", "r"))
 sendt = json.load(open("sendt.json", "r"))
-pdf_set = json.load(open("pdf_set.json","r"))
+#pdf_set = json.load(open("pdf_set.json","r"))
 mote_set= json.load(open("mote_set.json","r"))
 kommuneliste= json.load(open("kommuneliste.json","r"))
 #with open('behandlede_kommuner.pickle', 'rb') as handle:
@@ -432,7 +432,7 @@ def save():
         json.dump(pdfCrawl, open("pdfCrawl.json","w"))
         json.dump(done, open("done.json","w"))
         json.dump(innsyn, open("innsyn.json","w"))
-        json.dump(pdf_set, open("pdf_set.json","w"))
+        #json.dump(pdf_set, open("pdf_set.json","w"))
         json.dump(mote_set, open("mote_set.json","w"))
        # try:
         #    with open('kommune\\behandlede_kommuner.pickle', "wb") as handle:
