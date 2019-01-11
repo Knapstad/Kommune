@@ -275,8 +275,6 @@ class Kommune:
                 except:
                     with open("PdfLog.json", "w") as f:
                         json.dump(self.pdfLog, f)
-                    with open("Gold.json", "w") as f:
-                        json.dump(gold, f)
         else:
             for i in self.getMoter():
                 try:
