@@ -17,10 +17,7 @@ from datetime import date
 from selenium import webdriver
 import urllib.parse
 import _pickle
-
 from concurrent.futures import ThreadPoolExecutor
-
-
 
 requests.packages.urllib3.disable_warnings()
 proxies = json.load(open("config_.json", "r"))["proxies"]
