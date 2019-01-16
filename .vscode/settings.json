@@ -1,0 +1,9 @@
+{
+    "python.analysis.logLevel": "Warning",
+    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": false,
+    "python.linting.enabled": true,
+    "editor.tabCompletion": "on",
+    "python.jediEnabled": false
+}
+
