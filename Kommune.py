@@ -34,7 +34,7 @@ done = json.load(open("done.json","r"))
 pdfLog = json.load(open("pdfLog.json", "r"))
 pdfCrawl= json.load(open("pdfCrawl.json", "r"))
 sendt = json.load(open("sendt.json", "r"))
-#pdf_set = json.load(open("pdf_set.json","r"))
+pdf_set = json.load(open("pdf_set.json","r"))
 mote_set= json.load(open("mote_set.json","r"))
 kommuneliste= json.load(open("kommuneliste.json","r"))
 #with open('behandlede_kommuner.pickle', 'rb') as handle:
@@ -103,6 +103,7 @@ class Kommune:
                     return resp
                 i += 1
             return resp
+
     def get_html_selenium(self, url: str = None) -> str:
         if not url:
             url = self.url
@@ -357,19 +358,27 @@ class Kommune:
 
 
 def get_url(url: str = None, re: int = 3) -> requests.models.Response:
-        """gets url with proxysettings and returnes response"""
-        resp = requests.get(str(url), proxies=proxies, verify=False)
-        if str(resp) == "<Response [200]>":
-            return resp
-        else:
-            i = 1
-            while i < re + 1:
-                time.sleep(2)
-                resp = requests.get(str(url), proxies=proxies, verify=False)
-                if str(resp) == "<Response [200]>":
-                    return resp
-                i += 1
-            return resp
+
+        """gets url with proxysettings and returnes response
+        retries 're' times """
+        try:
+            resp = requests.get(str(url), proxies=proxies, verify=False)
+        except:
+            resp = None
+            if str(resp) == "<Response [200]>":
+                return resp
+            else:
+                i = 0
+                while i < re:
+                    time.sleep(2)
+                    try:
+                         resp = requests.get(str(url), proxies=proxies, verify=False)
+                    except:
+                        resp = None
+                    if str(resp) == "<Response [200]>":
+                        return resp
+                    i += 1
+                return resp
 
 
 def get_mote_url(url: str) -> list:
@@ -378,9 +387,22 @@ def get_mote_url(url: str) -> list:
     links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
     return links
 
+def get_all_urls(url: str) -> list:
+    resp = get_url(url)
+    elements: list = BS(resp.content, "html").findAll("a", href=True)
+    links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
+    return links
+
+def get_pdf(url: str) -> list:
+    links = get_all_urls(url)
+    pdfs: list = [link for link in links if sjekk_pdf_url(link)]
+    return pdfs
 
 def sjekk_mote_url(url: str) -> list:
     return any(sub in url for sub in mote_set)
+
+def sjekk_pdf_url(url: str) -> list:
+    return any(sub in url for sub in pdf_set)
 
 def find_non_standard_kommune():
     non_standard_kommune = []
