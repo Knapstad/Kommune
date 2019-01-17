@@ -482,13 +482,6 @@ def save():
         json.dump(pdfCrawl, open("pdfCrawl.json","w"))
         json.dump(done, open("done.json","w"))
         json.dump(innsyn, open("innsyn.json","w"))
-        #json.dump(pdf_set, open("pdf_set.json","w"))
+        json.dump(pdf_set, open("pdf_set.json","w"))
         json.dump(mote_set, open("mote_set.json","w"))
-       # try:
-        #    with open('kommune\\behandlede_kommuner.pickle', "wb") as handle:
-       #         _pickle.dump(behandlede_kommuner, handle, -1)
-       # except MemoryError as E:
-        #    print(E)
-        #    for kommune in behandlede_kommuner.keys():
-         #       with open("kommune\\behandlede_kommuner_"+kommune.lower()+".pickle", "wb") as name:
-          #          _pickle.dump(behandlede_kommuner[kommune], name, -1)
+
