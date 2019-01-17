@@ -17,12 +17,13 @@ from datetime import date
 from selenium import webdriver
 import urllib.parse
 import _pickle
+from urllib3 import disable_warnings
 
 from concurrent.futures import ThreadPoolExecutor
 
 
 
-requests.packages.urllib3.disable_warnings()
+disable_warnings()
 proxies = json.load(open("config_.json", "r"))["proxies"]
 
 
@@ -278,7 +279,6 @@ class Kommune:
                                         self.pdfLog[str(y)][0] = "1"
                                         self.pdfLog[str(y)].append(s)
                                         print(i, s)
-                                        gold[y].append([s])
                 except:
                     with open("PdfLog.json", "w") as f:
                         json.dump(self.pdfLog, f)
@@ -306,7 +306,6 @@ class Kommune:
                                         self.pdfLog[str(y)][0] = "1"
                                         self.pdfLog[str(y)].append(s)
                                         print(i, s)
-                                        gold[y].append([s])
                 except:
                     with open("PdfLog.json", "w") as f:
                         json.dump(self.pdfLog, f)
@@ -397,7 +396,6 @@ def get_html_selenium(url: str = None) -> str:
         driver = webdriver.Chrome(chrome_options=options)
         driver.get(url)
         accordion = driver.find_elements_by_class_name("accordion")
-        fc_title = driver.find_elements_by_class_name("fc-content")
         #open all accordions
         if len(accordion) > 0:
             for i in accordion:
@@ -405,9 +403,6 @@ def get_html_selenium(url: str = None) -> str:
                     i.click()
                 except:
                     pass
-        if len fc_content > 0:
-            ids=[url+"?offmoteid="el.get_attribute("id") for el in fc_content]
-
         html = driver.page_source
         return html
 
@@ -417,13 +412,14 @@ def get_mote_url(resp: BS) -> list:
     return links
 
 def get_all_urls(html: str) -> list:
+    soup = BS(html, "lxml")
     divs = soup.findAll("div", class_="fc-content")
     if len(divs) > 0:
         links: list = []
     # This is the standard way of getting the urls the ifstatements above
     # are to catch the exceptions and the weird javascript envoked links
-    elements: list = BS(html, "lxml").findAll("a", href=True)
-    links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
+    elements: list = soup.findAll("a", href=True)
+    links: list = [a.get("href") for a in elements] #Todo remember to add base url
     return links
 
 def get_pdf(links: list) -> list:
