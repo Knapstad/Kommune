@@ -412,6 +412,8 @@ def get_mote_url(resp: BS) -> list:
     return links
 
 def get_all_urls(html: str) -> list:
+    """Returned all links from given html-string
+     """
     soup = BS(html, "lxml")
     divs = soup.findAll("div", class_="fc-content")
     if len(divs) > 0:
@@ -484,4 +486,3 @@ def save():
         json.dump(innsyn, open("innsyn.json","w"))
         json.dump(pdf_set, open("pdf_set.json","w"))
         json.dump(mote_set, open("mote_set.json","w"))
-
