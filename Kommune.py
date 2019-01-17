@@ -113,6 +113,14 @@ class Kommune:
         options.add_argument('--window-size=1920,1080')
         driver = webdriver.Chrome(chrome_options=options)
         driver.get(url)
+        accordion = driver.find_elements_by_class_name("accordion")
+        #open all accordions
+        if len(accordion) > 0:
+            for i in accordion:
+                try:
+                    i.click()
+                except:
+                    pass
         html = driver.page_source
         return html
 
@@ -380,21 +388,45 @@ def get_url(url: str = None, re: int = 3) -> requests.models.Response:
                     i += 1
                 return resp
 
+def get_html_selenium(url: str = None) -> str:
+        
+        """Gets html and returnes html using a chromium instance"""
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        options.add_argument('--window-size=1920,1080')
+        driver = webdriver.Chrome(chrome_options=options)
+        driver.get(url)
+        accordion = driver.find_elements_by_class_name("accordion")
+        fc_title = driver.find_elements_by_class_name("fc-content")
+        #open all accordions
+        if len(accordion) > 0:
+            for i in accordion:
+                try:
+                    i.click()
+                except:
+                    pass
+        if len fc_content > 0:
+            ids=[url+"?offmoteid="el.get_attribute("id") for el in fc_content]
 
-def get_mote_url(url: str) -> list:
-    resp = get_url(url)
+        html = driver.page_source
+        return html
+
+def get_mote_url(resp: BS) -> list:
     elements: list = BS(resp.content, "html").findAll("a", href=True)
     links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
     return links
 
-def get_all_urls(url: str) -> list:
-    resp = get_url(url)
-    elements: list = BS(resp.content, "html").findAll("a", href=True)
+def get_all_urls(html: str) -> list:
+    divs = soup.findAll("div", class_="fc-content")
+    if len(divs) > 0:
+        links: list = []
+    # This is the standard way of getting the urls the ifstatements above
+    # are to catch the exceptions and the weird javascript envoked links
+    elements: list = BS(html, "lxml").findAll("a", href=True)
     links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
     return links
 
-def get_pdf(url: str) -> list:
-    links = get_all_urls(url)
+def get_pdf(links: list) -> list:
     pdfs: list = [link for link in links if sjekk_pdf_url(link)]
     return pdfs
 
