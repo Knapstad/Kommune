@@ -17,9 +17,16 @@ from datetime import date
 from selenium import webdriver
 import urllib.parse
 import _pickle
+
+from urllib3 import disable_warnings
+
 from concurrent.futures import ThreadPoolExecutor
 
-requests.packages.urllib3.disable_warnings()
+
+
+disable_warnings()
+
+
 proxies = json.load(open("config_.json", "r"))["proxies"]
 
 
@@ -110,6 +117,14 @@ class Kommune:
         options.add_argument('--window-size=1920,1080')
         driver = webdriver.Chrome(chrome_options=options)
         driver.get(url)
+        accordion = driver.find_elements_by_class_name("accordion")
+        #open all accordions
+        if len(accordion) > 0:
+            for i in accordion:
+                try:
+                    i.click()
+                except:
+                    pass
         html = driver.page_source
         return html
 
@@ -267,7 +282,6 @@ class Kommune:
                                         self.pdfLog[str(y)][0] = "1"
                                         self.pdfLog[str(y)].append(s)
                                         print(i, s)
-                                        gold[y].append([s])
                 except:
                     with open("PdfLog.json", "w") as f:
                         json.dump(self.pdfLog, f)
@@ -295,7 +309,6 @@ class Kommune:
                                         self.pdfLog[str(y)][0] = "1"
                                         self.pdfLog[str(y)].append(s)
                                         print(i, s)
-                                        gold[y].append([s])
                 except:
                     with open("PdfLog.json", "w") as f:
                         json.dump(self.pdfLog, f)
@@ -377,21 +390,44 @@ def get_url(url: str = None, re: int = 3) -> requests.models.Response:
                     i += 1
                 return resp
 
+def get_html_selenium(url: str = None) -> str:
+        
+        """Gets html and returnes html using a chromium instance"""
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        options.add_argument('--window-size=1920,1080')
+        driver = webdriver.Chrome(chrome_options=options)
+        driver.get(url)
+        accordion = driver.find_elements_by_class_name("accordion")
+        #open all accordions
+        if len(accordion) > 0:
+            for i in accordion:
+                try:
+                    i.click()
+                except:
+                    pass
+        html = driver.page_source
+        return html
 
-def get_mote_url(url: str) -> list:
-    resp = get_url(url)
+def get_mote_url(resp: BS) -> list:
     elements: list = BS(resp.content, "html").findAll("a", href=True)
     links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
     return links
 
-def get_all_urls(url: str) -> list:
-    resp = get_url(url)
-    elements: list = BS(resp.content, "html").findAll("a", href=True)
-    links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
+def get_all_urls(html: str) -> list:
+    """Returned all links from given html-string
+     """
+    soup = BS(html, "lxml")
+    divs = soup.findAll("div", class_="fc-content")
+    if len(divs) > 0:
+        links: list = []
+    # This is the standard way of getting the urls the ifstatements above
+    # are to catch the exceptions and the weird javascript envoked links
+    elements: list = soup.findAll("a", href=True)
+    links: list = [a.get("href") for a in elements] #Todo remember to add base url
     return links
 
-def get_pdf(url: str) -> list:
-    links = get_all_urls(url)
+def get_pdf(links: list) -> list:
     pdfs: list = [link for link in links if sjekk_pdf_url(link)]
     return pdfs
 
@@ -451,13 +487,5 @@ def save():
         json.dump(pdfCrawl, open("pdfCrawl.json","w"))
         json.dump(done, open("done.json","w"))
         json.dump(innsyn, open("innsyn.json","w"))
-        #json.dump(pdf_set, open("pdf_set.json","w"))
+        json.dump(pdf_set, open("pdf_set.json","w"))
         json.dump(mote_set, open("mote_set.json","w"))
-       # try:
-        #    with open('kommune\\behandlede_kommuner.pickle', "wb") as handle:
-       #         _pickle.dump(behandlede_kommuner, handle, -1)
-       # except MemoryError as E:
-        #    print(E)
-        #    for kommune in behandlede_kommuner.keys():
-         #       with open("kommune\\behandlede_kommuner_"+kommune.lower()+".pickle", "wb") as name:
-          #          _pickle.dump(behandlede_kommuner[kommune], name, -1)
