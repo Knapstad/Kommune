@@ -29,7 +29,7 @@ def load_files() -> None:
     innsyn = json.load(open("innsyn.json", "r"))
     done = json.load(open("done.json","r"))
     pdf_log = json.load(open("pdf_log.json", "r"))
-    pdfCrawl= json.load(open("pdfCrawl.json", "r"))
+    pdf_crawl= json.load(open("pdf_crawl.json", "r"))
     sendt = json.load(open("sendt.json", "r"))
     pdf_set = json.load(open("pdf_set.json","r"))
     mote_set= json.load(open("mote_set.json","r"))
@@ -133,7 +133,7 @@ class Kommune:
     #     driver = webdriver.Chrome(chrome_options=options)
     #     driver.get(url)
     #     time.sleep(1)
-    #     links: list = driver.find_elements_by_xpath(pdfCrawl[self.base][1])
+    #     links: list = driver.find_elements_by_xpath(pdf_crawl[self.base][1])
     #     pdf: list = [i.get_attribute("href") for i in links]
     #     return pdf
 
@@ -143,7 +143,7 @@ class Kommune:
     #         links: list = BS(self.geturl(url).text, "lxml").findAll("a",
     #                                                                 href=True)
     #         pdf: list = [urljoin(resp.url, a.get("href")) for a in links if ".pdf"
-    #                      in a.get("href").lower() or pdfCrawl[self.base][1]
+    #                      in a.get("href").lower() or pdf_crawl[self.base][1]
     #                          .lower()
     #                      in a.get("href").lower()]
     #         if not self.pdf:
@@ -154,7 +154,7 @@ class Kommune:
     #         pdf: list = [str(url), str(resp)]
     #     return pdf
 
-    def getPDF(self, url: str = None) -> None:
+    def get_pdf(self, url: str = None) -> None:
         """Saves pdf from url"""
         try:
             resp = self.geturl(url)
@@ -180,7 +180,7 @@ class Kommune:
         try:
             if not url:
                 url = self.url
-            if "//" in str(pdfCrawl[self.base][0]):
+            if "//" in str(pdf_crawl[self.base][0]):
                 for i in self.getMoterSel():
                     try:
                         for y in self.findPDFSel(i):
@@ -188,7 +188,7 @@ class Kommune:
                                 #print("passing")
                                 pass
                             else:
-                                doc = self.getPDF(y)
+                                doc = self.get_pdf(y)
                                 if doc == "no pdf found":
                                     self.pdf_log.setdefault(str(y), ["0",
                                                                     "no pdf error"])
@@ -210,12 +210,12 @@ class Kommune:
                                # print("passing")
                                 pass
                             else:
-                                if self.getPDF(y) == "no pdf found":
+                                if self.get_pdf(y) == "no pdf found":
                                     self.pdf_log.setdefault(str(y),
                                                            ["0",
                                                             "no pdf error"])
                                 else:
-                                    self.getPDF(y)
+                                    self.get_pdf(y)
                                     self.pdf_log.setdefault(str(y), ["0"])
                                     tekst = self.read_pdf()
                                     for s in self.bank:
@@ -235,7 +235,7 @@ class Kommune:
         if not url:
             url = self.url
         # if self.type == "einnsyn":
-        if "//" in str(pdfCrawl[self.base][0]):
+        if "//" in str(pdf_crawl[self.base][0]):
             for i in self.getMoterSel():
                 try:
                     for y in self.findPDFSel(i):
@@ -247,11 +247,11 @@ class Kommune:
                         if str(y) in self.pdf_log:
                             pass
                         else:
-                            if self.getPDF(y) == "no pdf found":
+                            if self.get_pdf(y) == "no pdf found":
                                 self.pdf_log.setdefault(str(y), ["0",
                                                                 "no pdf error"])
                             else:
-                                self.getPDF(y)
+                                self.get_pdf(y)
                                 self.pdf_log.setdefault(str(y), ["0"])
                                 tekst = self.read_pdf()
                                 for s in self.bank:
@@ -274,11 +274,11 @@ class Kommune:
                         if str(y) in self.pdf_log:
                             pass
                         else:
-                            if self.getPDF(y) == "no pdf found":
+                            if self.get_pdf(y) == "no pdf found":
                                 self.pdf_log.setdefault(str(y), ["0",
                                                                 "no pdf error"])
                             else:
-                                self.getPDF(y)
+                                self.get_pdf(y)
                                 self.pdf_log.setdefault(str(y), ["0"])
                                 tekst = self.read_pdf()
                                 for s in self.bank:
@@ -294,20 +294,20 @@ class Kommune:
 
 
     # def getMoter(self) -> list:
-    #     if pdfCrawl[self.base][0] is None:
+    #     if pdf_crawl[self.base][0] is None:
     #         return [self.url]
     #     else:
     #         """Finds all meetings on meeting calender site and returnes them as a list"""
     #         resp: requests.models.Response = self.geturl()
     #         links: list = BS(self.geturl().content, "lxml").findAll("a", href=True)
     #         meetings: list = [urljoin(resp.url, a.get("href")) for a in links if
-    #                           pdfCrawl[self.base][0].lower() in
+    #                           pdf_crawl[self.base][0].lower() in
     #                           a.get("href").lower()]
     #         return meetings
 
 
     def getMoterSel(self):
-        if pdfCrawl[self.base][0] is None:
+        if pdf_crawl[self.base][0] is None:
             return [None]
         else:
             options = webdriver.ChromeOptions()
@@ -316,7 +316,7 @@ class Kommune:
             driver = webdriver.Chrome(chrome_options=options)
             driver.get(self.url)
             time.sleep(1)
-            td = driver.find_elements_by_xpath(str(pdfCrawl[self.base][0]))
+            td = driver.find_elements_by_xpath(str(pdf_crawl[self.base][0]))
             ids = []
             if "prokomresources" in self.base:
                 meetings: list = [i.get_attribute("href") for i in td]
@@ -466,7 +466,7 @@ def print_treff(file: list):
 
 def save():
     """Saves all logs to disk"""
-    json.dump(pdfCrawl, open("pdf_crawl.json","w"))
+    json.dump(pdf_crawl, open("pdf_crawl.json","w"))
     json.dump(sendt, open("sendt.json","w"))
     json.dump(pdf_log, open("pdf_log.json","w"))
     json.dump(kommune, open("kommune.json","w"))
