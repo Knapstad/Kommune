@@ -2,7 +2,7 @@
 """
 Created on Tue Jul 17 14:21:32 2018
 
-@author: Bendik Knapstad
+@author: Bendik L Knapstad
 """
 
 import os
@@ -16,10 +16,7 @@ import json
 from datetime import date
 from selenium import webdriver
 import urllib.parse
-import _pickle
-
 from urllib3 import disable_warnings
-
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -74,7 +71,7 @@ class Kommune:
                            "Lån ", "Lån.", "Lån,", "Gjeld ", "Gjeld.", 
                            "Gjeld,", "Lånepapir", "Lånedokument", "Gjeldsgrad",
                            "Gjeldsandel", "Avdrag"]
-        self.treff=[]
+        self.treff: list =[]
         self.pdfLog: dict = {}
         
         try:
@@ -316,7 +313,7 @@ class Kommune:
                 json.dump(self.pdfLog, f)
 
 
-    def getMoter(self):
+    def getMoter(self) -> list:
         if pdfCrawl[self.base][0] is None:
             return [self.url]
         else:
@@ -390,29 +387,29 @@ def get_url(url: str = None, re: int = 3) -> requests.models.Response:
                     i += 1
                 return resp
 
-def get_html_selenium(url: str = None) -> str:
+# def get_html_selenium(url: str = None) -> str:
         
-        """Gets html and returnes html using a chromium instance"""
-        options = webdriver.ChromeOptions()
-        options.add_argument('headless')
-        options.add_argument('--window-size=1920,1080')
-        driver = webdriver.Chrome(chrome_options=options)
-        driver.get(url)
-        accordion = driver.find_elements_by_class_name("accordion")
-        #open all accordions
-        if len(accordion) > 0:
-            for i in accordion:
-                try:
-                    i.click()
-                except:
-                    pass
-        html = driver.page_source
-        return html
+#         """Gets html and returnes html using a chromium instance"""
+#         options = webdriver.ChromeOptions()
+#         options.add_argument('headless')
+#         options.add_argument('--window-size=1920,1080')
+#         driver = webdriver.Chrome(chrome_options=options)
+#         driver.get(url)
+#         accordion = driver.find_elements_by_class_name("accordion")
+#         #open all accordions
+#         if len(accordion) > 0:
+#             for i in accordion:
+#                 try:
+#                     i.click()
+#                 except:
+#                     pass
+#         html = driver.page_source
+#         return html
 
-def get_mote_url(resp: BS) -> list:
-    elements: list = BS(resp.content, "html").findAll("a", href=True)
-    links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
-    return links
+# def get_mote_url(resp: BS) -> list:
+#     elements: list = BS(resp.content, "html").findAll("a", href=True)
+#     links: list = [urllib.parse.urljoin(resp.url, a.get("href")) for a in elements]
+#     return links
 
 def get_all_urls(html: str) -> list:
     """Returned all links from given html-string
@@ -428,16 +425,21 @@ def get_all_urls(html: str) -> list:
     return links
 
 def get_pdf(links: list) -> list:
+    "Get all links if they match any string in pdf_set"
     pdfs: list = [link for link in links if sjekk_pdf_url(link)]
     return pdfs
 
 def sjekk_mote_url(url: str) -> list:
+    """Checks @param url for any match in mote_set returns bolean"""
     return any(sub in url for sub in mote_set)
 
 def sjekk_pdf_url(url: str) -> list:
+    """Checks url for any match in pdf_set returns bolean"""
     return any(sub in url for sub in pdf_set)
 
 def find_non_standard_kommune():
+    """Iterates over kommuneliste and returns a list of
+    all that does not pass the sjekk_mote_url check"""
     non_standard_kommune = []
     for kommune in kommuneliste:
         moter = get_mote_url(kommune[-1])
@@ -458,6 +460,8 @@ def kjor() -> None:
 
 
 def finn_treff():
+    """Itterates over pdfLog and returnes those that are
+    not pressent in sendt"""
     treff =  []
     for i in pdfLog.keys():
         if pdfLog[i][0] == "1" and i not in sendt:
@@ -466,24 +470,26 @@ def finn_treff():
     return treff
 
 
-def add_to_sendt(file):
+def add_to_sendt(file: list):
+    """adds list to sendt"""
    for i in file:
        if i[0] not in sendt:
            sendt.append(i[0])
 
 
-def print_treff(file):
+def print_treff(file: list):
+    """exports file to csv"""
     with open(f"kommune{thisday()}.csv","w") as f:
         write = csv.writer(f)
         write.writerows(file)
 
 
 def save():
+    """Saves all logs to disk"""
         json.dump(pdfCrawl, open("pdfCrawl.json","w"))
         json.dump(sendt, open("sendt.json","w"))
         json.dump(pdfLog, open("pdfLog.json","w"))
         json.dump(kommune, open("kommune.json","w"))
-        json.dump(pdfCrawl, open("pdfCrawl.json","w"))
         json.dump(pdfCrawl, open("pdfCrawl.json","w"))
         json.dump(done, open("done.json","w"))
         json.dump(innsyn, open("innsyn.json","w"))
