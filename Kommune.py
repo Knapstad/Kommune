@@ -24,7 +24,7 @@ disable_warnings()
 proxies = json.load(open("config_.json", "r"))["proxies"]
 
 #helper fuctions
-def load_files() -> None:
+def load_files() -> None: #denne ble dum, finn en bedre løsning
     kommune = json.load(open("kommune.json", "r"))
     innsyn = json.load(open("innsyn.json", "r"))
     done = json.load(open("done.json","r"))
@@ -181,7 +181,7 @@ class Kommune:
             if not url:
                 url = self.url
             if "//" in str(pdf_crawl[self.base][0]):
-                for i in self.getMoterSel():
+                for i in self.get_moter_selenium():
                     try:
                         for y in self.findPDFSel(i):
                             if str(y) in self.pdf_log:
@@ -236,7 +236,7 @@ class Kommune:
             url = self.url
         # if self.type == "einnsyn":
         if "//" in str(pdf_crawl[self.base][0]):
-            for i in self.getMoterSel():
+            for i in self.get_moter_selenium():
                 try:
                     for y in self.findPDFSel(i):
     #                    if "http" not in y:
@@ -306,7 +306,7 @@ class Kommune:
     #         return meetings
 
 
-    def getMoterSel(self):
+    def get_moter_selenium(self):
         if pdf_crawl[self.base][0] is None:
             return [None]
         else:
