@@ -134,7 +134,8 @@ class Kommune:
             return E
 
     def read_pdf(self):
-        """uses pdftotext comandline to convert to text"""
+        """uses pdftotext comandline to convert to text
+        returnes text"""
         os.system("pdftotext temp.pdf")
         with open("temp.txt", "r") as f:
             tekst = f.read()
@@ -152,7 +153,7 @@ class Kommune:
         driver.get(url)
         time.sleep(2) #wait for xhr
         accordion = driver.find_elements_by_class_name("accordion")
-        #open accordions if pressent
+        #open accordions if present
         if len(accordion) > 0:
             for i in accordion:
                 try:
@@ -163,123 +164,120 @@ class Kommune:
         driver.quit()
         return (html, url)
 
-    # def find_hits(self, url=None) -> Dict:
-    #     """Iterates over all pdf's and returnes a dictionary of link and
-    #     keyword when bank-words are pressent in the pdf"""
-    #     try:
-    #         if not url:
-    #             url = self.url
-    #         if "//" in str(pdf_crawl[self.base][0]):
-    #             for i in self.get_moter_selenium():
-    #                 try:
-    #                     for y in self.findPDFSel(i):
-    #                         if str(y) in self.pdf_log:
-    #                             #print("passing")
-    #                             pass
-    #                         else:
-    #                             doc = self.get_pdf(y)
-    #                             if doc == "no pdf found":
-    #                                 self.pdf_log.setdefault(str(y), ["0",
-    #                                                                 "no pdf error"])
-    #                             else:
-    #                                 self.pdf_log.setdefault(str(y), ["0"])
-    #                                 tekst = self.read_pdf()
-    #                                 for s in self.bank:
-    #                                     if s.lower() in tekst.lower():
-    #                                         self.pdf_log[str(y)][0] = "1"
-    #                                         self.pdf_log[str(y)].append(s)
-    #                 except:
-    #                     with open("pdf_log.json", "w") as f:
-    #                         json.dump(self.pdf_log, f)
-    #         else:
-    #             for i in self.getMoter():
-    #                 try:
-    #                     for y in self.findPDF(i):
-    #                         if str(y) in self.pdf_log:
-    #                            # print("passing")
-    #                             pass
-    #                         else:
-    #                             if self.get_pdf(y) == "no pdf found":
-    #                                 self.pdf_log.setdefault(str(y),
-    #                                                        ["0",
-    #                                                         "no pdf error"])
-    #                             else:
-    #                                 self.get_pdf(y)
-    #                                 self.pdf_log.setdefault(str(y), ["0"])
-    #                                 tekst = self.read_pdf()
-    #                                 for s in self.bank:
-    #                                     if s.lower() in tekst.lower():
-    #                                         self.pdf_log[str(y)][0] = "1"
-    #                                         self.pdf_log[str(y)].append(s)
-    #                 except:
-    #                     with open("pdf_log.json", "w") as f:
-    #                         json.dump(self.pdf_log, f)
-                       
-    #         with open("pdf_log.json", "w") as f:
-    #                 json.dump(self.pdf_log, f)
-    #     except Exception as E:
-    #         with open("pdf_log.json", "w") as f:
-    #                         json.dump(self.pdf_log, f)
-    #         print(E)
-    #     if not url:
-    #         url = self.url
-    #     # if self.type == "einnsyn":
-    #     if "//" in str(pdf_crawl[self.base][0]):
-    #         for i in self.get_moter_selenium():
-    #             try:
-    #                 for y in self.findPDFSel(i):
-    # #                    if "http" not in y:
-    # #                        y = self.base+y
-    # #                    if "http" not in y and "document.ashx" in y:
-    # #                        y = self.base2+y
-    #                     print(f"møte {i}, sak {y}")
-    #                     if str(y) in self.pdf_log:
-    #                         pass
-    #                     else:
-    #                         if self.get_pdf(y) == "no pdf found":
-    #                             self.pdf_log.setdefault(str(y), ["0",
-    #                                                             "no pdf error"])
-    #                         else:
-    #                             self.get_pdf(y)
-    #                             self.pdf_log.setdefault(str(y), ["0"])
-    #                             tekst = self.read_pdf()
-    #                             for s in self.bank:
-    #                                 if s.lower() in tekst.lower():
-    #                                     self.pdf_log[str(y)][0] = "1"
-    #                                     self.pdf_log[str(y)].append(s)
-    #                                     print(i, s)
-    #             except:
-    #                 with open("pdf_log.json", "w") as f:
-    #                     json.dump(self.pdf_log, f)
-    #     else:
-    #         for i in self.getMoter():
-    #             try:
-    #                 for y in self.findPDF(i):
-    # #                    if "http" not in y:
-    # #                        y = self.base+y
-    # #                    if "http" not in y and "document.ashx" in y:
-    # #                        y = self.base2+y
-    #                     print(f"møte {i}, sak {y}")
-    #                     if str(y) in self.pdf_log:
-    #                         pass
-    #                     else:
-    #                         if self.get_pdf(y) == "no pdf found":
-    #                             self.pdf_log.setdefault(str(y), ["0",
-    #                                                             "no pdf error"])
-    #                         else:
-    #                             self.get_pdf(y)
-    #                             self.pdf_log.setdefault(str(y), ["0"])
-    #                             tekst = self.read_pdf()
-    #                             for s in self.bank:
-    #                                 if s.lower() in tekst.lower():
-    #                                     self.pdf_log[str(y)][0] = "1"
-    #                                     self.pdf_log[str(y)].append(s)
-    #                                     print(i, s)
-    #             except:
-    #                 with open("pdf_log.json", "w") as f:
-    #                     json.dump(self.pdf_log, f)
-    #     with open("pdf_log.json", "w") as f:
-    #             json.dump(self.pdf_log, f)
+    def find_hits(self, pdf_url: str)-> None:
+        #ikke litt ferdig engang
+        try:
+            self.get_pdf()
+            tekst= self.read_pdf()
+            for word in self.bank:
+                if word.lower() in tekst.lower():
+                    pdf_log[pdf_url][0]=1
+                    pdf_log[pdf_url]
+                    pdf_log[pdf_url].append(word)
+            for word in self.pensjon:
+                if word.lower() in tekst.lower():
+                    pdf_log[pdf_url][0]="pensjon"
+                    pdf_log[pdf_url].append(word)
+
+        except Exception as e:
+            self.pdf_log[pdf_url]=[0, e]
+
+
+
+    def find_hits(self, url: str =None) -> Dict:
+        """Iterates over all pdf's and returnes a dictionary of link and
+        keyword when bank-words are pressent in the pdf"""
+        try:
+            if not url:
+                url = self.url
+            for i in self.getMoter():
+                try:
+                    for y in self.findPDF(i):
+                        if str(y) in self.pdf_log:
+                            # print("passing")
+                            pass
+                        else:
+                            if self.get_pdf(y) == "no pdf found":
+                                self.pdf_log.setdefault(str(y),
+                                                        ["0",
+                                                        "no pdf error"])
+                            else:
+                                self.get_pdf(y)
+                                self.pdf_log.setdefault(str(y), ["0"])
+                                tekst = self.read_pdf()
+                                for s in self.bank:
+                                    if s.lower() in tekst.lower():
+                                        self.pdf_log[str(y)][0] = "1"
+                                        self.pdf_log[str(y)].append(s)
+                except:
+                    with open("pdf_log.json", "w") as f:
+                        json.dump(self.pdf_log, f)
+                    
+            with open("pdf_log.json", "w") as f:
+                    json.dump(self.pdf_log, f)
+        except Exception as E:
+            with open("pdf_log.json", "w") as f:
+                            json.dump(self.pdf_log, f)
+            print(E)
+        if not url:
+            url = self.url
+        # if self.type == "einnsyn":
+        if "//" in str(pdf_crawl[self.base][0]):
+            for i in self.get_moter_selenium():
+                try:
+                    for y in self.findPDFSel(i):
+    #                    if "http" not in y:
+    #                        y = self.base+y
+    #                    if "http" not in y and "document.ashx" in y:
+    #                        y = self.base2+y
+                        print(f"møte {i}, sak {y}")
+                        if str(y) in self.pdf_log:
+                            pass
+                        else:
+                            if self.get_pdf(y) == "no pdf found":
+                                self.pdf_log.setdefault(str(y), ["0",
+                                                                "no pdf error"])
+                            else:
+                                self.get_pdf(y)
+                                self.pdf_log.setdefault(str(y), ["0"])
+                                tekst = self.read_pdf()
+                                for s in self.bank:
+                                    if s.lower() in tekst.lower():
+                                        self.pdf_log[str(y)][0] = "1"
+                                        self.pdf_log[str(y)].append(s)
+                                        print(i, s)
+                except:
+                    with open("pdf_log.json", "w") as f:
+                        json.dump(self.pdf_log, f)
+        else:
+            for i in self.getMoter():
+                try:
+                    for y in self.findPDF(i):
+    #                    if "http" not in y:
+    #                        y = self.base+y
+    #                    if "http" not in y and "document.ashx" in y:
+    #                        y = self.base2+y
+                        # print(f"møte {i}, sak {y}")
+                        if str(y) in self.pdf_log:
+                            pass
+                        else:
+                            if self.get_pdf(y) == "no pdf found":
+                                self.pdf_log.setdefault(str(y), ["0",
+                                                                "no pdf error"])
+                            else:
+                                self.get_pdf(y)
+                                self.pdf_log.setdefault(str(y), ["0"])
+                                tekst = self.read_pdf()
+                                for s in self.bank:
+                                    if s.lower() in tekst.lower():
+                                        self.pdf_log[str(y)][0] = "1"
+                                        self.pdf_log[str(y)].append(s)
+                                        print(i, s)
+                except:
+                    with open("pdf_log.json", "w") as f:
+                        json.dump(self.pdf_log, f)
+        with open("pdf_log.json", "w") as f:
+                json.dump(self.pdf_log, f)
 
 
     # def getMoter(self) -> list:
@@ -409,7 +407,7 @@ def get_all_urls(html: str, url: str) -> list:
     links: list = [urljoin(url, a.get("href")) for a in elements]
     return links
 
-def get_pdf(links: list) -> list:
+def get_pdf_urls(links: list) -> list:
     "Get all links if they match any string in pdf_set"
     pdfs: list = [link for link in links if sjekk_pdf_url(link)]
     return pdfs
@@ -422,7 +420,7 @@ def sjekk_pdf_url(url: str) -> list:
     """Checks url for any match in pdf_set returns bolean"""
     return any(sub in url for sub in pdf_set)
 
-def find_non_standard_kommune():
+def find_non_standard_kommune() -> list:
     """Iterates over kommuneliste and returns a list of
     all that does not pass the sjekk_mote_url check"""
     non_standard_kommune = []
@@ -447,29 +445,49 @@ def kjor() -> None:
             a.find_hits()
 
 
-def finn_treff():
+def finn_treff() -> list:
     """Itterates over pdf_log and returnes those that have hits
     and are not present in sendt"""
     treff =  []
     for i in pdf_log.keys():
-        if pdf_log[i][0] == "1" and i not in sendt:
+        if pdf_log[i][0] != "0" and i not in sendt:
+            #print(i)
+            treff.append([i, pdf_log[i]])
+    return treff
+
+def finn_treff_bank() -> list:
+    """Itterates over pdf_log and returnes those that have bank hits
+    and are not present in sendt"""
+    treff =  []
+    for i in pdf_log.keys():
+        if pdf_log[i][0] != "bank" and i not in sendt:
             #print(i)
             treff.append([i, pdf_log[i]])
     return treff
 
 
-def add_to_sendt(file: list):
+def finn_treff_pensjon() -> list:
+    """Itterates over pdf_log and returnes those that have bank hits
+    and are not present in sendt"""
+    treff =  []
+    for i in pdf_log.keys():
+        if pdf_log[i][0] != "pensjon" and i not in sendt:
+            #print(i)
+            treff.append([i, pdf_log[i]])
+    return treff
+
+def add_to_sendt(file: list) -> None:
     """adds list to sendt"""
     for pdf_link in file:
        if pdf_link[0] not in sendt:
            sendt.append(i[0])
 
 
-def print_treff(file: list):
-    """exports file to csv"""
+def print_treff_to_file(hit_list: list) -> None:
+    """exports hit_list to csv"""
     with open(f"kommune{thisday()}.csv","w") as f:
         write = csv.writer(f)
-        write.writerows(file)
+        write.writerows(hit_list)
 
 
 def save():
