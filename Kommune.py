@@ -23,23 +23,20 @@ from tqdm import tqdm
 disable_warnings()
 
 try:
-    proxies = json.load(open("config_.json", "r"))["proxies"]
+    proxies = json.load(open("file/config_.json", "r"))["proxies"]
 except FileNotFoundError:
-    print("config_.json needs to be pressent in working directory")
+    print("config_.json needs to be pressent in working directory/file")
 
 #helper fuctions
-kommune = json.load(open("kommune.json", "r"))
-# innsyn = json.load(open("innsyn.json", "r"))
-# done = json.load(open("done.json","r"))
-pdf_log = json.load(open("pdf_log.json", "r"))
-# pdf_crawl= json.load(open("pdf_crawl.json", "r"))
-sendt = json.load(open("sendt.json", "r"))
-pdf_set = json.load(open("pdf_set.json","r"))
-mote_set = json.load(open("mote_set.json","r"))
-kommuneliste = json.load(open("kommuneliste.json","r"))
-standard_kommune = json.load(open("standard_kommune.json","r"))
-nonstandard_kommune = json.load(open("nonstandard_kommune.json","r"))
-direct_kommune = json.load(open("direct_kommune.json","r"))
+kommune = json.load(open("file/log/kommune.json", "r"))
+pdf_log = json.load(open("file/log/pdf_log.json", "r"))
+sendt = json.load(open("file/log/sendt.json", "r"))
+pdf_set = json.load(open("file/log/pdf_set.json","r"))
+mote_set = json.load(open("file/log/mote_set.json","r"))
+kommuneliste = json.load(open("file/log/kommuneliste.json","r"))
+standard_kommune = json.load(open("file/log/standard_kommune.json","r"))
+nonstandard_kommune = json.load(open("file/log/nonstandard_kommune.json","r"))
+direct_kommune = json.load(open("file/log/direct_kommune.json","r"))
 
 
 def thisday() -> str:
@@ -75,15 +72,16 @@ class Kommune:
         self.treff: list =[]
         self.pdf_log: dict = {}
         try:
-            self.pdf_log: dict = json.load(open("pdf_log.json", "r"))
+            self.pdf_log: dict = json.load(open("file/log/pdf_log.json", "r"))
         except FileNotFoundError:
+            print("no pdf log file found")
             self.pdf_log: dict = {}
         try:
-            self.pdf_set: list = json.load(open("pdf_set.json","r"))
+            self.pdf_set: list = json.load(open("file/log/pdf_set.json","r"))
         except FileNotFoundError:
             print("pdf_set.json needs to be pressent in working directory")
         try:
-            self.mote_set: list = json.load(open("mote_set.json","r"))
+            self.mote_set: list = json.load(open("file/log/mote_set.json","r"))
         except FileNotFoundError:
             print("mote_set.json needs to be pressent in working directory")
 
@@ -109,7 +107,7 @@ class Kommune:
         return resp
 
     def get_html_selenium(self, url: str = None) -> str:
-        """Gets html and returnes using a chromium instance"""
+        """Gets and returnes html as a string using a chromium instance"""
         if not url:
             url = self.url
         options = webdriver.ChromeOptions()
@@ -133,7 +131,7 @@ class Kommune:
         try:
             resp = self.get_url(url=url)
             if str(resp) == "<Response [200]>":
-                with open("temp.pdf", "wb") as file:
+                with open("file/pdf/temp.pdf", "wb") as file:
                     file.write(resp.content)
             else:
                 self.pdf_log[url]["Bank"] = [str(resp,)+ "No pdf"]
@@ -142,11 +140,11 @@ class Kommune:
         except Exception as E:
             return E
 
-    def read_pdf(self):
-        """uses pdftotext comandline to convert to text
+    def read_pdf(self) -> str:
+        """Uses pdftotext comandline to convert to text
         returnes text"""
-        os.system("pdftotext temp.pdf")
-        with open("temp.txt", "r") as f:
+        os.system("pdftotext file/pdf/temp.pdf")
+        with open("file/pdf/temp.txt", "r") as f:
             tekst = f.read()
         return tekst
 
@@ -165,7 +163,7 @@ class Kommune:
             self.pdf_log[pdf_url]["Bank"]=[0, e]
 
     def find_hits_pensjon(self, pdf_url: str)-> None:
-        """Finds pansjon word in textconverted pdf via self.read_pdf()"""
+        """Finds pensjons words in text-converted pdf via self.read_pdf()"""
         self.pdf_log.setdefault(pdf_url,{"Bank": [0], "Pensjon": [0]})
         try:
             tekst = self.read_pdf()
@@ -177,7 +175,7 @@ class Kommune:
             self.pdf_log[pdf_url]["Pensjon"]=[0, e]
 
     def get_mote_url(self, resp: BS) -> list:
-        """Asumes resp is a url with list of standars meetings,
+        """Asumes resp is a url with list of standard meetings,
         @returnes: list of links""" 
         elements: list = BS(resp.content, "lxml").findAll("a", href=True)
         links: list = [urljoin(resp.url, a.get("href")) for a in elements if sjekk_mote_url(urljoin(resp.url, a.get("href")))]
@@ -202,9 +200,8 @@ def get_url(url: str = None, re: int = 3) -> requests.models.Response:
         return resp
 
 
-def get_html_selenium(url: str = None) -> str:
-        
-        """Gets html and returnes html using a chromium instance"""
+def get_html_selenium(url: str) -> str:
+        """Gets and returnes html using a chromium instance"""
         options = webdriver.ChromeOptions()
         options.add_argument('headless')
         options.add_argument('--window-size=1920,1080')
@@ -223,15 +220,14 @@ def get_html_selenium(url: str = None) -> str:
         driver.quit()
         return (html, url)
 
-def get_mote_url(resp: BS) -> list:
+def get_mote_url(resp: requests.models.Response) -> list:
     elements: list = BS(resp.content, "lxml").findAll("a", href=True)
     links: list = [urljoin(resp.url, a.get("href")) for a in elements if sjekk_mote_url(urljoin(resp.url, a.get("href")))]
     return links
 
 def get_all_urls(html: str, url: str) -> list:
     """Returnes all links from given html-string
-    
-    url is used to join relative links to absolute liks
+    url is used to join relative links to absolute links
     """
     soup = BS(html, "lxml")
     divs = soup.findAll("div", class_="fc-content")
@@ -248,7 +244,7 @@ def get_pdf_urls(links: list) -> bool:
     pdfs: list = [link for link in links if sjekk_pdf_url(link)]
     return pdfs
 
-def sjekk_mote_url(url: str):
+def sjekk_mote_url(url: str) -> bool:
     """Checks @param url for any match in mote_set returns bolean"""
     return any(sub in url for sub in mote_set)
 
@@ -259,6 +255,12 @@ def sjekk_pdf_url(url: str) -> list:
 def find_non_standard_kommune() -> list:
     """Iterates over kommuneliste and returns a list of
     all that does not pass the sjekk_mote_url check"""
+    try:
+        #checks if kommuneliste exists
+        kommuneliste
+    except NameError as e:
+        #loads from json if not
+        kommuneliste = json.load(open("file/log/kommuneliste.json","r"))
     non_standard_kommune = []
     for kommune in kommuneliste:
         try:
@@ -274,8 +276,8 @@ def find_non_standard_kommune() -> list:
 
 
 
-def kjor_kommune(kommune_url: str, kommune_navn: str = None) -> None:
-    """Takes kommune_url and kommune_navn finds kommune pdfs
+def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
+    """Takes kommune_url and kommune_name finds kommune pdfs
     updates pdf_log with new findings and saves to pdf_log.json"""
     kommune: Kommune = Kommune(url=kommune_url, name=kommune_navn)
     mote_response  = kommune.get_url()
@@ -288,12 +290,12 @@ def kjor_kommune(kommune_url: str, kommune_navn: str = None) -> None:
         kommune.read_pdf()
         kommune.find_hits_bank(pdf_url=pdf)
         kommune.find_hits_pensjon(pdf_url=pdf)
-    pdf_log = json.load(open("pdf_log.json","r"))
+    pdf_log = json.load(open("file/log/pdf_log.json","r"))
     updated_pdf_log = {**pdf_log, **kommune.pdf_log}
-    json.dump(updated_pdf_log, open("pdf_log.json","w"))
+    json.dump(updated_pdf_log, open("file/log/pdf_log.json","w"))
 
 def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None: 
-    """Takes kommune_url and kommune_navn finds kommune pdfs
+    """Takes kommune_url and kommune_name finds kommune pdfs
     updates pdf_log with new findings and saves to pdf_log.json""" 
     kommune: Kommune = Kommune(url=kommune_url, name=kommune_name)
     pdf_response  = kommune.get_url()
@@ -303,9 +305,9 @@ def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None:
         kommune.read_pdf()
         kommune.find_hits_bank(pdf_url=pdf)
         kommune.find_hits_pensjon(pdf_url=pdf)
-    pdf_log = json.load(open("pdf_log.json","r"))
+    pdf_log = json.load(open("file/log/pdf_log.json","r"))
     updated_pdf_log = {**pdf_log, **kommune.pdf_log}
-    json.dump(updated_pdf_log, open("pdf_log.json","w"))
+    json.dump(updated_pdf_log, open("file/log/pdf_log.json","w"))
 
 def finn_treff() -> list:
     """Itterates over pdf_log and returnes those that have hits
@@ -338,48 +340,48 @@ def finn_treff_pensjon() -> list:
             treff.append([i, pdf_log[i]])
     return treff
 
-def add_to_sendt(file: list) -> None:
+def add_to_sendt(hit_list: list) -> None:
     """adds list to sendt"""
-    for pdf_link in file:
+    for pdf_link in hit_list:
        if pdf_link[0] not in sendt:
            sendt.append(pdf_link[0])
 
 
 def print_treff_to_file(hit_list: list, name: str = None) -> None:
     """exports hit_list to csv"""
-    with open(f"/files/kommune{name}{thisday()}.csv","w") as f:
+    with open(f"/files/out/kommune{name}{thisday()}.csv","w") as f:
         write = csv.writer(f)
         write.writerows(hit_list)
 
 
 def save():
     """Saves all logs to disk"""
-    # json.dump(pdf_crawl, open("pdf_crawl.json","w"))
-    json.dump(sendt, open("sendt.json","w"))
-    json.dump(pdf_log, open("pdf_log.json","w"))
-    json.dump(kommune, open("kommune.json","w"))
-    # json.dump(done, open("done.json","w"))
-    # json.dump(innsyn, open("innsyn.json","w"))
-    json.dump(pdf_set, open("pdf_set.json","w"))
-    json.dump(mote_set, open("mote_set.json","w"))
-    json.dump(standard_kommune, open("standard_kommune.json","w"))
-    json.dump(nonstandard_kommune, open("nonstandard_kommune.json","w"))
-    json.dump(direct_kommune, open("direct_kommune.json","w"))
+
+    json.dump(sendt, open("file/log/sendt.json","w"))
+    json.dump(pdf_log, open("file/log/pdf_log.json","w"))
+    json.dump(kommune, open("file/log/kommune.json","w"))
+    json.dump(pdf_set, open("file/log/pdf_set.json","w"))
+    json.dump(mote_set, open("file/log/mote_set.json","w"))
+    json.dump(standard_kommune, open("file/log/standard_kommune.json","w"))
+    json.dump(nonstandard_kommune, open("file/log/nonstandard_kommune.json","w"))
+    json.dump(direct_kommune, open("file/log/direct_kommune.json","w"))
 
 if __name__=="__main__":
+
     #loads all nesecery logs and files from working directory
-    kommune = json.load(open("kommune.json", "r"))
-    pdf_log = json.load(open("pdf_log.json", "r"))
-    sendt = json.load(open("sendt.json", "r"))
-    pdf_set = json.load(open("pdf_set.json","r"))
-    mote_set = json.load(open("mote_set.json","r"))
-    kommuneliste = json.load(open("kommuneliste.json","r"))
-    standard_kommune = json.load(open("standard_kommune.json","r"))
-    nonstandard_kommune = json.load(open("nonstandard_kommune.json","r"))
-    direct_kommune = json.load(open("direct_kommune.json","r"))
-    starts program loop
-     for kommunenavn in standard_kommune:
-         kjor_kommune(kommune_url=kommunenavn[1], name=kommunenanvn)
+    kommune = json.load(open("file/log/kommune.json", "r"))
+    pdf_log = json.load(open("file/log/pdf_log.json", "r"))
+    sendt = json.load(open("file/log/sendt.json", "r"))
+    pdf_set = json.load(open("file/log/pdf_set.json","r"))
+    mote_set = json.load(open("file/log/mote_set.json","r"))
+    kommuneliste = json.load(open("file/log/kommuneliste.json","r"))
+    standard_kommune = json.load(open("file/log/standard_kommune.json","r"))
+    nonstandard_kommune = json.load(open("file/log/nonstandard_kommune.json","r"))
+    direct_kommune = json.load(open("file/log/direct_kommune.json","r"))
+
+    # starts program loop
+    for kommunenavn in standard_kommune:
+        kjor_kommune(kommune_url=standard_kommune[kommunenavn][1], kommune_name=kommunenanvn)
     for kommunenavn in direct_kommune:
         kjor_direkte_kommune(kommune_url=direct_kommune[kommunenavn][1], kommune_name=kommunenavn)
     treff_bank = finn_treff_bank()
