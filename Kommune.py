@@ -388,7 +388,7 @@ def print_treff_to_file(hit_list: list, name: str = None) -> None:
     """exports hit_list to csv"""
 
     logger.info("Initiating print_treff_to_file")
-    with open(f"/files/out/kommune{name}{thisday()}.csv","w") as f:
+    with open(f"file/out/kommune{name}{thisday()}.csv","w") as f:
         write = csv.writer(f)
         write.writerows(hit_list)
 
