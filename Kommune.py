@@ -20,12 +20,18 @@ from selenium import webdriver
 from urllib.parse import urljoin as urljoin
 from urllib3 import disable_warnings
 from concurrent.futures import ThreadPoolExecutor
-# from tqdm import tqdm
+from tqdm import tqdm
 
+def thisday() -> str:
+    now = date.today()
+    return (f"{now.day}-{now.month}-{now.year}")
 
-
-logging.basicConfig(level=logging.DEBUG, filename="Kommune.log", filemode="w", format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
+logging.basicConfig(level=logging.DEBUG, filename=f"file/logs/{thisday()}KommuneLog.log", filemode="w", format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
 logger = logging.getLogger(__name__)
+inf = logging.FileHandler("file/logs/{thisday()}InfoKommuneLog.log")
+err = logging.FileHandler("file/logs/{thisday()}ErrorKommuneLog.log")
+inf.setLevel(logging.INFO)
+err.setLevel(logging.ERROR)
 disable_warnings()
 
 try:
@@ -35,15 +41,15 @@ except FileNotFoundError:
     logger.exception("config_.json needs to be pressent in 'working directory/file'", exc_info=True)
 
 #helper fuctions
-# kommune = json.load(open("file/log/kommune.json", "r"))
-# pdf_log = json.load(open("file/log/pdf_log.json", "r"))
-# sendt = json.load(open("file/log/sendt.json", "r"))
-# pdf_set = json.load(open("file/log/pdf_set.json","r"))
-# mote_set = json.load(open("file/log/mote_set.json","r"))
-# kommuneliste = json.load(open("file/log/kommuneliste.json","r"))
-# standard_kommune = json.load(open("file/log/standard_kommune.json","r"))
-# nonstandard_kommune = json.load(open("file/log/nonstandard_kommune.json","r"))
-# direct_kommune = json.load(open("file/log/direct_kommune.json","r"))
+# kommune = json.load(open("file/data/kommune.json", "r"))
+# pdf_log = json.load(open("file/data/pdf_log.json", "r"))
+# sendt = json.load(open("file/data/sendt.json", "r"))
+# pdf_set = json.load(open("file/data/pdf_set.json","r"))
+# mote_set = json.load(open("file/data/mote_set.json","r"))
+# kommuneliste = json.load(open("file/data/kommuneliste.json","r"))
+# standard_kommune = json.load(open("file/data/standard_kommune.json","r"))
+# nonstandard_kommune = json.load(open("file/data/nonstandard_kommune.json","r"))
+# direct_kommune = json.load(open("file/data/direct_kommune.json","r"))
 
 
 def thisday() -> str:
@@ -80,16 +86,16 @@ class Kommune:
         self.treff: list =[]
         self.pdf_log: dict = {}
         try:
-            self.pdf_log: dict = json.load(open("file/log/pdf_log.json", "r"))
+            self.pdf_log: dict = json.load(open("file/data/pdf_log.json", "r"))
         except FileNotFoundError:
             logger.info("no pdf log file found")
             self.pdf_log: dict = {}
         try:
-            self.pdf_set: list = json.load(open("file/log/pdf_set.json","r"))
+            self.pdf_set: list = json.load(open("file/data/pdf_set.json","r"))
         except FileNotFoundError:
             logger.info("pdf_set.json needs to be pressent in working directory")
         try:
-            self.mote_set: list = json.load(open("file/log/mote_set.json","r"))
+            self.mote_set: list = json.load(open("file/data/mote_set.json","r"))
         except FileNotFoundError:
             logger.info("mote_set.json needs to be pressent in working directory")
 
@@ -279,7 +285,7 @@ def find_non_standard_kommune() -> list:
         kommuneliste
     except NameError as e:
         #loads from json if not
-        kommuneliste = json.load(open("file/log/kommuneliste.json","r"))
+        kommuneliste = json.load(open("file/data/kommuneliste.json","r"))
     non_standard_kommune = []
     for kommune in kommuneliste:
         try:
@@ -303,6 +309,7 @@ def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
     kommune: Kommune = Kommune(url=kommune_url, name=kommune_name)
     mote_response  = kommune.get_url()
     moter: list = kommune.get_mote_url(resp=mote_response)
+    logger.info(f"Møter length: {len(moter)}")
     for url in moter:
         pdf_response = kommune.get_url(url=url)
         pdfs: list = kommune.get_pdf_url(resp=pdf_response)
@@ -311,14 +318,15 @@ def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
         except NameError as e:
             logger.exception(f"Pdf list error, {e}")
             pdfs=[]
+        logger.info(f"Pdfs length: {len(pdfs)}")    
     for pdf in pdfs:
         kommune.get_pdf(url=pdf)
         kommune.read_pdf()
         kommune.find_hits_bank(pdf_url=pdf)
         kommune.find_hits_pensjon(pdf_url=pdf)
-    pdf_log = json.load(open("file/log/pdf_log.json","r"))
+    pdf_log = json.load(open("file/data/pdf_log.json","r"))
     updated_pdf_log = {**pdf_log, **kommune.pdf_log}
-    json.dump(updated_pdf_log, open("file/log/pdf_log.json","w"))
+    json.dump(updated_pdf_log, open("file/data/pdf_log.json","w"))
 
 def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None: 
     """Takes kommune_url and kommune_name finds kommune pdfs
@@ -338,9 +346,9 @@ def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None:
         kommune.read_pdf()
         kommune.find_hits_bank(pdf_url=pdf)
         kommune.find_hits_pensjon(pdf_url=pdf)
-    pdf_log = json.load(open("file/log/pdf_log.json","r"))
+    pdf_log = json.load(open("file/data/pdf_log.json","r"))
     updated_pdf_log = {**pdf_log, **kommune.pdf_log}
-    json.dump(updated_pdf_log, open("file/log/pdf_log.json","w"))
+    json.dump(updated_pdf_log, open("file/data/pdf_log.json","w"))
 
 def finn_treff() -> list:
     """Itterates over pdf_log and returnes those that have hits
@@ -396,43 +404,43 @@ def print_treff_to_file(hit_list: list, name: str = None) -> None:
 def save():
     """Saves all logs to disk"""
 
-    json.dump(sendt, open("file/log/sendt.json","w"))
-    json.dump(pdf_log, open("file/log/pdf_log.json","w"))
-    json.dump(kommune, open("file/log/kommune.json","w"))
-    json.dump(pdf_set, open("file/log/pdf_set.json","w"))
-    json.dump(mote_set, open("file/log/mote_set.json","w"))
-    json.dump(standard_kommune, open("file/log/standard_kommune.json","w"))
-    json.dump(nonstandard_kommune, open("file/log/nonstandard_kommune.json","w"))
-    json.dump(direct_kommune, open("file/log/direct_kommune.json","w"))
+    json.dump(sendt, open("file/data/sendt.json","w"))
+    json.dump(pdf_log, open("file/data/pdf_log.json","w"))
+    json.dump(kommune, open("file/data/kommune.json","w"))
+    json.dump(pdf_set, open("file/data/pdf_set.json","w"))
+    json.dump(mote_set, open("file/data/mote_set.json","w"))
+    json.dump(standard_kommune, open("file/data/standard_kommune.json","w"))
+    json.dump(nonstandard_kommune, open("file/data/nonstandard_kommune.json","w"))
+    json.dump(direct_kommune, open("file/data/direct_kommune.json","w"))
 
 if __name__=="__main__":
     logger.info("starting progam Kommune")
     #loads all nesecery logs and files from working directory
     logger.info("loading file kommune.json")
-    kommune = json.load(open("file/log/kommune.json", "r"))
+    kommune = json.load(open("file/data/kommune.json", "r"))
     logger.info("loading file pdf_log.json")
-    pdf_log = json.load(open("file/log/pdf_log.json", "r"))
+    pdf_log = json.load(open("file/data/pdf_log.json", "r"))
     logger.info("loading file sendt.json")
-    sendt = json.load(open("file/log/sendt.json", "r"))
+    sendt = json.load(open("file/data/sendt.json", "r"))
     logger.info("loading file pdf_set.json")
-    pdf_set = json.load(open("file/log/pdf_set.json","r"))
+    pdf_set = json.load(open("file/data/pdf_set.json","r"))
     logger.info("loading file mote_set.json")
-    mote_set = json.load(open("file/log/mote_set.json","r"))
+    mote_set = json.load(open("file/data/mote_set.json","r"))
     logger.info("loading file kommuneliste.json")
-    kommuneliste = json.load(open("file/log/kommuneliste.json","r"))
+    kommuneliste = json.load(open("file/data/kommuneliste.json","r"))
     logger.info("loading file standard_kommune.json")
-    standard_kommune = json.load(open("file/log/standard_kommune.json","r"))
+    standard_kommune = json.load(open("file/data/standard_kommune.json","r"))
     logger.info("loading file nonstandard_kommune.json")
-    nonstandard_kommune = json.load(open("file/log/nonstandard_kommune.json","r"))
+    nonstandard_kommune = json.load(open("file/data/nonstandard_kommune.json","r"))
     logger.info("loading file direct_kommune.json")
-    direct_kommune = json.load(open("file/log/direct_kommune.json","r"))
+    direct_kommune = json.load(open("file/data/direct_kommune.json","r"))
     
     
     # starts program loop
     logger.info("starting programloop")
-    for kommunenavn in standard_kommune:
+    for kommunenavn in tqdm(standard_kommune):
         kjor_kommune(kommune_url=standard_kommune[kommunenavn][1], kommune_name=kommunenavn)
-    for kommunenavn in direct_kommune:
+    for kommunenavn in tqdm(direct_kommune):
         kjor_direkte_kommune(kommune_url=direct_kommune[kommunenavn][1], kommune_name=kommunenavn)
     treff_bank = finn_treff_bank()
     treff_pensjon = finn_treff_pensjon()
