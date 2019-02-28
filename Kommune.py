@@ -29,10 +29,13 @@ def thisday() -> str:
 
 logging.basicConfig(level=logging.DEBUG, filename=f"file/logs/{thisday()}KommuneLog.log", filemode="w", format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
 logger = logging.getLogger(__name__)
+formatter = logging.Formatter("%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
 inf = logging.FileHandler(f"file/logs/{thisday()}InfoKommuneLog.log")
 err = logging.FileHandler(f"file/logs/{thisday()}ErrorKommuneLog.log")
 inf.setLevel(logging.INFO)
 err.setLevel(logging.ERROR)
+inf.setFormatter(formatter)
+err.setFormatter(formatter)
 logger.addHandler(err)
 logger.addHandler(inf)
 disable_warnings()
@@ -121,7 +124,7 @@ class Kommune:
             return resp
         except Exception as e:
             logger.exception(f"{url}, error: {e}")
-            return resp
+            return None
 
     def get_html_selenium(self, url: str = None) -> str:
         """Gets and returnes html as a string using a chromium instance"""
@@ -176,8 +179,10 @@ class Kommune:
             tekst = self.read_pdf()
             for word in self.bank:
                 if word.lower() in tekst.lower():
+                    logger.info(f"found hit {word}")
                     self.pdf_log[pdf_url]["Bank"][0]=1
                     self.pdf_log[pdf_url]["Bank"].append(word)
+                    logger.info(f"{self.pdf_log[pdf_url]["Bank"].append(word)}")
         except Exception as e:
             logger.exception("Bankhits error: ")
             self.pdf_log[pdf_url]["Bank"]=[0, e]
@@ -190,8 +195,10 @@ class Kommune:
             tekst = self.read_pdf()
             for word in self.pensjon:
                 if word.lower() in tekst.lower():
+                    logger.info(f"found hit {word}")
                     self.pdf_log[pdf_url]["Pensjon"][0]=1
                     self.pdf_log[pdf_url]["Pensjon"].append(word)
+                    logger.info(f"{self.pdf_log[pdf_url]["Bank"].append(word)}")
         except Exception as e:
             logger.exception("Pensjonhits error: ")
             self.pdf_log[pdf_url]["Pensjon"]=[0, e]
@@ -199,16 +206,17 @@ class Kommune:
     def get_mote_url(self, resp: BS) -> list:
         """Asumes resp is a url with list of standard meetings,
         @returnes: list of links""" 
-        logger.info(f"Getting møte urls {self.name}")
+        logger.info(f"Getting møte urls {self.name} : {resp.url}")
         elements: list = BS(resp.content, "lxml").findAll("a", href=True)
         links: list = [urljoin(resp.url, a.get("href")) for a in elements if sjekk_mote_url(urljoin(resp.url, a.get("href")))]
         return links
 
     def get_pdf_url(self, resp: BS) -> list:
-        logger.info(f"Getting pdf urls {self.name}")
-        """Assumes resp is a meeting url, @returnes all pdf urls form reso"""
+        """Assumes resp is a meeting url, @returnes all pdf urls form resp"""
+        logger.info(f"Getting pdf urls {self.name}: {resp.url}")
         elements: list = BS(resp.content, "lxml").findAll("a", href=True)
         links: list = [urljoin(resp.url, a.get("href")) for a in elements if sjekk_pdf_url(urljoin(resp.url, a.get("href")))]
+        logger.info(f"Returning pdf urls {links}")
         return links
 
 def get_url(url: str = None, re: int = 3) -> Response:
@@ -270,7 +278,7 @@ def get_pdf_urls(links: list) -> list:
 
 def sjekk_mote_url(url: str) -> bool:
     """Checks @param url for any match in mote_set returns bolean"""
-    return any(sub in url for sub in mote_set)
+    return any([sub in url for sub in mote_set])
 
 def sjekk_pdf_url(url: str) -> bool:
     """Checks url for any match in pdf_set returns bolean"""
@@ -309,15 +317,13 @@ def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
     mote_response  = kommune.get_url()
     moter: list = kommune.get_mote_url(resp=mote_response)
     logger.info(f"Møter length: {len(moter)}")
+    pdfs = []
     for url in tqdm(moter, desc=f"Møter {kommune.name}: "):
+        logger.info(f"Getting from : {len(pdfs)}")
         pdf_response = kommune.get_url(url=url)
-        pdfs: list = kommune.get_pdf_url(resp=pdf_response)
-        try:
-            pdfs
-        except NameError as e:
-            logger.exception(f"Pdf list error, {e}")
-            pdfs=[]
-        logger.info(f"Pdfs length: {len(pdfs)}")    
+        pdfs += kommune.get_pdf_url(resp=pdf_response)
+        
+        logger.info(f"{pdfs}")    
     for pdf in tqdm(pdfs, desc=f"Pdfs {kommune.name}: "):
         kommune.get_pdf(url=pdf)
         kommune.read_pdf()
@@ -325,6 +331,9 @@ def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
         kommune.find_hits_pensjon(pdf_url=pdf)
     pdf_log = json.load(open("file/data/pdf_log.json","r"))
     updated_pdf_log = {**pdf_log, **kommune.pdf_log}
+    logger.info("Writing pdf_log")
+    logger.info(f"Oldsize: {len(pdf_log)}")
+    logger.info(f"Newsize: {len(updated_pdf_log)}")
     json.dump(updated_pdf_log, open("file/data/pdf_log.json","w"))
 
 def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None: 
@@ -345,8 +354,11 @@ def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None:
         kommune.read_pdf()
         kommune.find_hits_bank(pdf_url=pdf)
         kommune.find_hits_pensjon(pdf_url=pdf)
+    logger.info("Writing pdf_log")
     pdf_log = json.load(open("file/data/pdf_log.json","r"))
     updated_pdf_log = {**pdf_log, **kommune.pdf_log}
+    logger.info(f"Oldsize: {len(pdf_log)}")
+    logger.info(f"Newsize: {len(updated_pdf_log)}")
     json.dump(updated_pdf_log, open("file/data/pdf_log.json","w"))
 
 def finn_treff() -> list:
@@ -441,9 +453,9 @@ if __name__=="__main__":
     
     # starts program loop
     logger.info("starting programloop")
-    for kommunenavn in tqdm(standard_kommune):
+    for kommunenavn in tqdm(standard_kommune, desc="Standardkommuner: "):
         kjor_kommune(kommune_url=standard_kommune[kommunenavn][1], kommune_name=kommunenavn)
-    for kommunenavn in tqdm(direct_kommune):
+    for kommunenavn in tqdm(direct_kommune, desc="Directkommuner"):
         kjor_direkte_kommune(kommune_url=direct_kommune[kommunenavn][1], kommune_name=kommunenavn)
     treff_bank = finn_treff_bank()
     treff_pensjon = finn_treff_pensjon()
