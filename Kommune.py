@@ -78,8 +78,7 @@ class Kommune:
                            "Simpelgaranti", "Simpelkausjon",
                            "Selvskyldnergaranti", "Selvskyldner garanti",
                            "Selvskyldner kausjon", "Selvskyldnerkausjon",
-                           "Lån ", "Lån.", "Lån,", "Gjeld ", "Gjeld.", 
-                           "Gjeld,", "Lånepapir", "Lånedokument", "Gjeldsgrad",
+                           "Lån ", "Lån.", "Lån,", "Lånepapir", "Lånedokument", "Gjeldsgrad",
                            "Gjeldsandel", "Avdrag"]
         self.pensjon: list =["pensjonsordning", "pensjon", "tjenestepensjon",
                              "innskuddspensjon", "hybridpensjon", 
@@ -375,11 +374,10 @@ def finn_treff() -> list:
 def finn_treff_bank() -> list:
     """Iterates over pdf_log and returnes those that have bank hits
     and are not present in sendt"""
-
     logger.info("Initiating finn_treff_bank")
     treff =  []
     for i in pdf_log.keys():
-        if pdf_log[i]["Bank"][0] == "1" and i not in sendt:
+        if pdf_log[i]["Bank"][0] == 1 and i not in sendt:
             treff.append([i, pdf_log[i]["Bank"]])
     return treff
 
@@ -387,12 +385,11 @@ def finn_treff_bank() -> list:
 def finn_treff_pensjon() -> list:
     """Iterates over pdf_log and returnes those that have bank hits
     and are not present in sendt"""
-
     logger.info("Initiating finn_treff_pensjon")
     treff =  []
     for i in pdf_log.keys():
-        if pdf_log[i]["Pensjon"][0] == "1" and i not in sendt:
-            treff.append([i, pdf_log[i]])
+        if pdf_log[i]["Pensjon"][0] == 1 and i not in sendt:
+            treff.append([i, pdf_log[i]["Pensjon"]])
     return treff
 
 def add_to_sendt(hit_list: list) -> None:
@@ -405,7 +402,6 @@ def add_to_sendt(hit_list: list) -> None:
 
 def print_treff_to_file(hit_list: list, name: str = None) -> None:
     """exports hit_list to csv"""
-
     logger.info("Initiating print_treff_to_file")
     with open(f"file/out/kommune{name}{thisday()}.csv","w") as f:
         write = csv.writer(f)
