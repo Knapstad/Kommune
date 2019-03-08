@@ -13,6 +13,7 @@ import time
 import json
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
 from typing import Dict, List, Optional, Tuple
 from bs4 import BeautifulSoup as BS
 from requests import Response
@@ -27,35 +28,39 @@ def thisday() -> str:
     now = date.today()
     return (f"{now.day}-{now.month}-{now.year}")
 
-logging.basicConfig(level=logging.DEBUG, filename=f"file/logs/{thisday()}KommuneLog.log", filemode="w", format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
+# logging.basicConfig(level=logging.DEBUG,format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
 logger = logging.getLogger(__name__)
 formatter = logging.Formatter("%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
-inf = logging.FileHandler(f"file/logs/{thisday()}InfoKommuneLog.log")
-err = logging.FileHandler(f"file/logs/{thisday()}ErrorKommuneLog.log")
+debug = RotatingFileHandler(f"file/logs/{thisday()}DebugKommuneLog.log", maxBytes=10*1024*1024, backupCount=2)
+inf = RotatingFileHandler(f"file/logs/{thisday()}InfoKommuneLog.log", maxBytes=10*1024*1024, backupCount=2)
+err = RotatingFileHandler(f"file/logs/{thisday()}ErrorKommuneLog.log" ,maxBytes=10*1024*1024, backupCount=2)
 inf.setLevel(logging.INFO)
 err.setLevel(logging.ERROR)
+debug.setLevel(logging.DEBUG)
 inf.setFormatter(formatter)
 err.setFormatter(formatter)
+debug.setFormatter(formatter)
 logger.addHandler(err)
 logger.addHandler(inf)
+logger.addHandler(debug)
 disable_warnings()
 
 try:
     logger.info("Loading Proxie settings")
     proxies = json.load(open("file/config_.json", "r"))["proxies"]
 except FileNotFoundError:
-    logger.exception("config_.json needs to be pressent in 'working directory/file'", exc_info=True)
+    logger.exception("config_.json needs to be present in 'working directory/file'", exc_info=True)
 
-#helper fuctions
-# kommune = json.load(open("file/data/kommune.json", "r"))
-# pdf_log = json.load(open("file/data/pdf_log.json", "r"))
-# sendt = json.load(open("file/data/sendt.json", "r"))
-# pdf_set = json.load(open("file/data/pdf_set.json","r"))
-# mote_set = json.load(open("file/data/mote_set.json","r"))
-# kommuneliste = json.load(open("file/data/kommuneliste.json","r"))
-# standard_kommune = json.load(open("file/data/standard_kommune.json","r"))
-# nonstandard_kommune = json.load(open("file/data/nonstandard_kommune.json","r"))
-# direct_kommune = json.load(open("file/data/direct_kommune.json","r"))
+# helper fuctions
+kommune = json.load(open("file/data/kommune.json", "r"))
+pdf_log = json.load(open("file/data/pdf_log.json", "r"))
+sendt = json.load(open("file/data/sendt.json", "r"))
+pdf_set = json.load(open("file/data/pdf_set.json","r"))
+mote_set = json.load(open("file/data/mote_set.json","r"))
+kommuneliste = json.load(open("file/data/kommuneliste.json","r"))
+standard_kommune = json.load(open("file/data/standard_kommune.json","r"))
+nonstandard_kommune = json.load(open("file/data/nonstandard_kommune.json","r"))
+direct_kommune = json.load(open("file/data/direct_kommune.json","r"))
 
 
 # start Class
@@ -71,41 +76,56 @@ class Kommune:
         self.name = name
         self.url = url
         self.pdf: Optional[str] = None
-        self.type: Optional[str] = None
         self.bank: list = ["Kommunal garanti", "Kommunal kausjon",
                            "Kommunalgaranti", "Kommunalkausjon",
                            "Simpel garanti ", "Simpel kausjon",
                            "Simpelgaranti", "Simpelkausjon",
                            "Selvskyldnergaranti", "Selvskyldner garanti",
                            "Selvskyldner kausjon", "Selvskyldnerkausjon",
-                           "Lån ", "Lån.", "Lån,", "Lånepapir", "Lånedokument", "Gjeldsgrad",
-                           "Gjeldsandel", "Avdrag"]
+                           "Lånepapir", "Lånedokument", "Gjeldsgrad",
+                           "Gjeldsandel"]
         self.pensjon: list =["pensjonsordning", "pensjon", "tjenestepensjon",
                              "innskuddspensjon", "hybridpensjon", 
                              "pensjonsleverandør", "AFP", "Ny pensjonsordning", 
                              "ny pensjon"]
         self.treff: list =[]
-        self.pdf_log: dict = {}
         try:
-            self.pdf_log: dict = json.load(open("file/data/pdf_log.json", "r"))
-        except FileNotFoundError:
-            logger.info("no pdf log file found")
-            self.pdf_log: dict = {}
+            self.pdf_log: dict = pdf_log
+        except NameError:
+            logger.info("pdf_log Not in namespace loading from file")
+            try:
+                with open("file/data/pdf_log.json") as f:
+                    self.pdf_log = json.load(f)
+            except FileNotFoundError:
+                logger.info("pdf_log.json not found, setting empty log")
+                self.pdf_log: dict = {}
         try:
-            self.pdf_set: list = json.load(open("file/data/pdf_set.json","r"))
-        except FileNotFoundError:
-            logger.info("pdf_set.json needs to be pressent in working directory")
+            self.pdf_set = pdf_set
+        except NameError:
+            logger.info("pdf_set not in namespace loading from file")
+
+            try:
+                with open("file/data/pdf_set.json","r") as f:
+                    self.pdf_set: list = json.load(f)
+            except FileNotFoundError:
+                logger.info("pdf_set.json needs to be pressent in working directory")
+                raise FileNotFoundError
         try:
-            self.mote_set: list = json.load(open("file/data/mote_set.json","r"))
-        except FileNotFoundError:
-            logger.info("mote_set.json needs to be pressent in working directory")
+            self.mote_set = mote_set
+        except NameError:
+            logger.info("mote_set not in namespace, loading from file")
+            try:
+                with open("file/data/mote_set.json") as f:
+                    self.mote_set: list = json.load(f)
+            except FileNotFoundError:
+                logger.info("mote_set.json needs to be pressent in working directory")
+                raise FileNotFoundError
 
     def __str__(self) -> str:
         representation = f"""
             {self.name} kommune
             url = {self.url}
-            pdf = {self.pdf} pdf'er
-            type = {self.type}"""
+            pdf = {self.pdf} pdf'er"""
         return representation
 
     def get_url(self, url: str = None, re: int = 3) -> Response:
@@ -181,7 +201,6 @@ class Kommune:
                     logger.info(f"found hit {word}")
                     self.pdf_log[pdf_url]["Bank"][0]=1
                     self.pdf_log[pdf_url]["Bank"].append(word)
-                    logger.info(f"{self.pdf_log[pdf_url]["Bank"].append(word)}")
         except Exception as e:
             logger.exception("Bankhits error: ")
             self.pdf_log[pdf_url]["Bank"]=[0, e]
@@ -197,7 +216,6 @@ class Kommune:
                     logger.info(f"found hit {word}")
                     self.pdf_log[pdf_url]["Pensjon"][0]=1
                     self.pdf_log[pdf_url]["Pensjon"].append(word)
-                    logger.info(f"{self.pdf_log[pdf_url]["Bank"].append(word)}")
         except Exception as e:
             logger.exception("Pensjonhits error: ")
             self.pdf_log[pdf_url]["Pensjon"]=[0, e]
@@ -207,105 +225,31 @@ class Kommune:
         @returnes: list of links""" 
         logger.info(f"Getting møte urls {self.name} : {resp.url}")
         elements: list = BS(resp.content, "lxml").findAll("a", href=True)
-        links: list = [urljoin(resp.url, a.get("href")) for a in elements if sjekk_mote_url(urljoin(resp.url, a.get("href")))]
+        links: list = [urljoin(resp.url, a.get("href")) for a in elements if self.sjekk_mote_url(urljoin(resp.url, a.get("href")))]
         return links
 
     def get_pdf_url(self, resp: BS) -> list:
         """Assumes resp is a meeting url, @returnes all pdf urls form resp"""
         logger.info(f"Getting pdf urls {self.name}: {resp.url}")
         elements: list = BS(resp.content, "lxml").findAll("a", href=True)
-        links: list = [urljoin(resp.url, a.get("href")) for a in elements if sjekk_pdf_url(urljoin(resp.url, a.get("href")))]
+        links: list = [urljoin(resp.url, a.get("href")) for a in elements if self.sjekk_pdf_url(urljoin(resp.url, a.get("href")))]
         logger.info(f"Returning pdf urls {links}")
         return links
 
-def get_url(url: str = None, re: int = 3) -> Response:
-        """gets url with proxysettings and returnes response
-        retries 're' times """
-        logger.info(f"Getting url {url}")
-        times = 0
-        while times <= re:
-            time.sleep(2)
-            resp = requests.get(str(url), proxies=proxies, verify=False)
-            if str(resp) == "<Response [200]>":
-                return resp
-            times += 1
-        return resp
+    def sjekk_mote_url(self, url: str) -> bool:
+        """Checks @param url for any match in mote_set returns bolean"""
+        if not url.startswith("http"):
+            return False
+        return any(sub in url for sub in mote_set) and not any(sub in url for sub in exclude)
+        
 
-
-def get_html_selenium(url: str) -> Tuple[str, str]:
-        """Gets and returnes html using a chromium instance"""
-        logger.info(f"Starting chromium instance")
-        options = webdriver.ChromeOptions()
-        options.add_argument('headless')
-        options.add_argument('--window-size=1920,1080')
-        driver = webdriver.Chrome(chrome_options=options)
-        logger.info(f"Getting url: {url}")
-        driver.get(url)
-        time.sleep(2) #wait for xhr
-        accordion = driver.find_elements_by_class_name("accordion")
-        #open accordions if pressent
-        if len(accordion) > 0:
-            for i in accordion:
-                try:
-                    i.click()
-                except:
-                    pass
-        html = driver.page_source
-        logger.info("Closing chromium instance")
-        driver.quit()
-        return (html, url)
-
-def get_mote_url(resp: requests.models.Response) -> list:
-    elements: list = BS(resp.content, "lxml").findAll("a", href=True)
-    links: list = [urljoin(resp.url, a.get("href")) for a in elements if sjekk_mote_url(urljoin(resp.url, a.get("href")))]
-    return links
-
-def get_all_urls(html: str, url: str) -> list:
-    """Returnes all links from given html-string
-    url is used to join relative links to absolute links
-    """
-    soup = BS(html, "lxml")
-    # divs = soup.findAll("div", class_="fc-content")
-    elements: list = soup.findAll("a", href=True)
-    links: list = [urljoin(url, a.get("href")) for a in elements]
-    return links
-
-def get_pdf_urls(links: list) -> list:
-    "Get all links if they match any string in pdf_set"
-    pdfs: list = [link for link in links if sjekk_pdf_url(link)]
-    return pdfs
-
-def sjekk_mote_url(url: str) -> bool:
-    """Checks @param url for any match in mote_set returns bolean"""
-    return any([sub in url for sub in mote_set])
-
-def sjekk_pdf_url(url: str) -> bool:
-    """Checks url for any match in pdf_set returns bolean"""
-    return any(sub in url for sub in pdf_set)
-
-def find_non_standard_kommune() -> list:
-    """Iterates over kommuneliste and returns a list of
-    all that does not pass the sjekk_mote_url check"""
-    try:
-        #checks if kommuneliste exists
-        kommuneliste
-    except NameError as e:
-        #loads from json if not
-        kommuneliste = json.load(open("file/data/kommuneliste.json","r"))
-    non_standard_kommune = []
-    for kommune in kommuneliste:
-        try:
-            moter = get_mote_url(get_url(kommune[-1]))
-            if any([sjekk_mote_url(mote) for mote in moter]):
-                pass
-            else:
-                non_standard_kommune.append(kommune)
-        except Exception as e:
-            logger.exception(f"{kommune[-1]}, {e}")
-            non_standard_kommune.append(kommune)
-    return non_standard_kommune
-
-
+    def sjekk_pdf_url(self, url: str) -> bool:
+        """Checks url for any match in pdf_set returns bolean"""
+        if not url.startswith("http"):
+            return False
+        if url in self.pdf_log:
+            return False
+        return any(sub in url for sub in selg.pdf_set) and not any(sub in url for sub in exclude)
 
 def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
     """Takes kommune_url and kommune_name finds kommune pdfs
@@ -316,24 +260,18 @@ def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
     mote_response  = kommune.get_url()
     moter: list = kommune.get_mote_url(resp=mote_response)
     logger.info(f"Møter length: {len(moter)}")
-    pdfs = []
+    pdfs: list = []
     for url in tqdm(moter, desc=f"Møter {kommune.name}: "):
         logger.info(f"Getting from : {len(pdfs)}")
         pdf_response = kommune.get_url(url=url)
         pdfs += kommune.get_pdf_url(resp=pdf_response)
-        
-        logger.info(f"{pdfs}")    
+        logger.info(f"{pdfs}")
     for pdf in tqdm(pdfs, desc=f"Pdfs {kommune.name}: "):
         kommune.get_pdf(url=pdf)
         kommune.read_pdf()
         kommune.find_hits_bank(pdf_url=pdf)
         kommune.find_hits_pensjon(pdf_url=pdf)
-    pdf_log = json.load(open("file/data/pdf_log.json","r"))
-    updated_pdf_log = {**pdf_log, **kommune.pdf_log}
-    logger.info("Writing pdf_log")
-    logger.info(f"Oldsize: {len(pdf_log)}")
-    logger.info(f"Newsize: {len(updated_pdf_log)}")
-    json.dump(updated_pdf_log, open("file/data/pdf_log.json","w"))
+    pdf_log = {**pdf_log, **kommune.pdf_log}
 
 def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None: 
     """Takes kommune_url and kommune_name finds kommune pdfs
@@ -354,11 +292,7 @@ def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None:
         kommune.find_hits_bank(pdf_url=pdf)
         kommune.find_hits_pensjon(pdf_url=pdf)
     logger.info("Writing pdf_log")
-    pdf_log = json.load(open("file/data/pdf_log.json","r"))
-    updated_pdf_log = {**pdf_log, **kommune.pdf_log}
-    logger.info(f"Oldsize: {len(pdf_log)}")
-    logger.info(f"Newsize: {len(updated_pdf_log)}")
-    json.dump(updated_pdf_log, open("file/data/pdf_log.json","w"))
+    pdf_log = {**pdf_log, **kommune.pdf_log}
 
 def finn_treff() -> list:
     """Itterates over pdf_log and returnes those that have hits
@@ -403,7 +337,7 @@ def add_to_sendt(hit_list: list) -> None:
 def print_treff_to_file(hit_list: list, name: str = None) -> None:
     """exports hit_list to csv"""
     logger.info("Initiating print_treff_to_file")
-    with open(f"file/out/kommune{name}{thisday()}.csv","w") as f:
+    with open(f"file/out/kommune {name} {thisday()}.csv","w") as f:
         write = csv.writer(f)
         write.writerows(hit_list)
 
@@ -423,25 +357,37 @@ def save():
 if __name__=="__main__":
     try:
         logger.info("starting progam Kommune")
-        #loads all nesecery logs and files from working directory
+        #loads all necessary logs and files from working directory
         logger.info("loading file kommune.json")
-        kommune = json.load(open("file/data/kommune.json", "r"))
+        with open("file/data/kommune.json", "r") as f:
+            kommune = json.load(f)
         logger.info("loading file pdf_log.json")
-        pdf_log = json.load(open("file/data/pdf_log.json", "r"))
+        with open("file/data/pdf_log.json", "r") as f:
+            pdf_log = json.load(f)
         logger.info("loading file sendt.json")
-        sendt = json.load(open("file/data/sendt.json", "r"))
+        with open("file/data/sendt.json", "r") as f:
+            sendt = json.load()
         logger.info("loading file pdf_set.json")
-        pdf_set = json.load(open("file/data/pdf_set.json","r"))
+        with open("file/data/pdf_set.json","r") as f:
+            pdf_set = json.load(f)
         logger.info("loading file mote_set.json")
-        mote_set = json.load(open("file/data/mote_set.json","r"))
+        with open("file/data/mote_set.json","r") as f:
+            mote_set = json.load(f)
         logger.info("loading file kommuneliste.json")
-        kommuneliste = json.load(open("file/data/kommuneliste.json","r"))
+        with open("file/data/kommuneliste.json","r") as f:
+            kommuneliste = json.load())
         logger.info("loading file standard_kommune.json")
-        standard_kommune = json.load(open("file/data/standard_kommune.json","r"))
+        with open("file/data/standard_kommune.json","r") as f:
+            standard_kommune = json.load(f)
         logger.info("loading file nonstandard_kommune.json")
-        nonstandard_kommune = json.load(open("file/data/nonstandard_kommune.json","r"))
+        with open("file/data/nonstandard_kommune.json","r") as f
+            nonstandard_kommune = json.load(f)
         logger.info("loading file direct_kommune.json")
-        direct_kommune = json.load(open("file/data/direct_kommune.json","r"))
+        with open("file/data/direct_kommune.json","r") as f:
+            direct_kommune = json.load(f)
+        logger.info("loading file exluded.json")
+        with open("file/data/exluded.json") as f:
+            exluded=json.load(f)
     except Exception as e:
         logger.exception(f"File load error: {e}")
         sys.exit(0)
@@ -449,13 +395,21 @@ if __name__=="__main__":
     
     # starts program loop
     logger.info("starting programloop")
-    for kommunenavn in tqdm(standard_kommune, desc="Standardkommuner: "):
-        kjor_kommune(kommune_url=standard_kommune[kommunenavn][1], kommune_name=kommunenavn)
-    for kommunenavn in tqdm(direct_kommune, desc="Directkommuner"):
-        kjor_direkte_kommune(kommune_url=direct_kommune[kommunenavn][1], kommune_name=kommunenavn)
+    try:
+        for kommunenavn in tqdm(standard_kommune, desc="Standardkommuner: "):
+            kjor_kommune(kommune_url=standard_kommune[kommunenavn][1], kommune_name=kommunenavn)
+        for kommunenavn in tqdm(direct_kommune, desc="Directkommuner"):
+            kjor_direkte_kommune(kommune_url=direct_kommune[kommunenavn][1], kommune_name=kommunenavn)
+    except Exception as e:
+        logger.error("e, saving pdf-log")
+        logger.info("Writing pdf_log")
+        logger.info(f"Oldsize: {len(pdf_log)}")
+        logger.info(f"Newsize: {len(updated_pdf_log)}")
+        with open("file/data/pdf_log.json","w") as f:
+            json.dump(pdf_log, f)
     treff_bank = finn_treff_bank()
     treff_pensjon = finn_treff_pensjon()
     print_treff_to_file(treff_bank, "Bank")
     print_treff_to_file(treff_pensjon, "Pensjon")
     add_to_sendt(treff_bank + treff_pensjon)
-
+    save()
