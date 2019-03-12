@@ -375,12 +375,12 @@ if __name__=="__main__":
             mote_set = json.load(f)
         logger.info("loading file kommuneliste.json")
         with open("file/data/kommuneliste.json","r") as f:
-            kommuneliste = json.load())
+            kommuneliste = json.load(f)
         logger.info("loading file standard_kommune.json")
         with open("file/data/standard_kommune.json","r") as f:
             standard_kommune = json.load(f)
         logger.info("loading file nonstandard_kommune.json")
-        with open("file/data/nonstandard_kommune.json","r") as f
+        with open("file/data/nonstandard_kommune.json","r") as f:
             nonstandard_kommune = json.load(f)
         logger.info("loading file direct_kommune.json")
         with open("file/data/direct_kommune.json","r") as f:
