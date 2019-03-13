@@ -30,10 +30,11 @@ def thisday() -> str:
 
 # logging.basicConfig(level=logging.DEBUG,format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
-debug = RotatingFileHandler(f"file/logs/{thisday()}DebugKommuneLog.log", maxBytes=10*1024*1024, backupCount=2)
-inf = RotatingFileHandler(f"file/logs/{thisday()}InfoKommuneLog.log", maxBytes=10*1024*1024, backupCount=2)
-err = RotatingFileHandler(f"file/logs/{thisday()}ErrorKommuneLog.log" ,maxBytes=10*1024*1024, backupCount=2)
+debug = RotatingFileHandler(f"file/logs/DebugKommuneLog.log", maxBytes=10*1024*1024, backupCount=2)
+inf = RotatingFileHandler(f"file/logs/InfoKommuneLog.log", maxBytes=10*1024*1024, backupCount=2)
+err = RotatingFileHandler(f"file/logs/ErrorKommuneLog.log" ,maxBytes=10*1024*1024, backupCount=2)
 inf.setLevel(logging.INFO)
 err.setLevel(logging.ERROR)
 debug.setLevel(logging.DEBUG)
@@ -46,13 +47,13 @@ logger.addHandler(debug)
 disable_warnings()
 
 try:
-    logger.info("Loading Proxie settings")
+    logger.info("Loading Proxie settings",exc_info=True)
     proxies = json.load(open("file/config_.json", "r"))["proxies"]
 except FileNotFoundError:
     logger.exception("config_.json needs to be present in 'working directory/file'", exc_info=True)
 
 # helper fuctions
-kommune = json.load(open("file/data/kommune.json", "r"))
+# kommune = json.load(open("file/data/kommune.json", "r"))
 pdf_log = json.load(open("file/data/pdf_log.json", "r"))
 sendt = json.load(open("file/data/sendt.json", "r"))
 pdf_set = json.load(open("file/data/pdf_set.json","r"))
@@ -249,12 +250,12 @@ class Kommune:
             return False
         if url in self.pdf_log:
             return False
-        return any(sub in url for sub in selg.pdf_set) and not any(sub in url for sub in exclude)
+        return any(sub in url for sub in self.pdf_set) and not any(sub in url for sub in exclude)
 
-def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
+def kjor_kommune(kommune_url: str, kommune_name: str = None, pdf_log: dict = None) -> None:
     """Takes kommune_url and kommune_name finds kommune pdfs
     updates pdf_log with new findings and saves to pdf_log.json"""
-
+    pdf_log = pdf_log
     logger.info(f"Starting kjor_kommune")
     kommune: Kommune = Kommune(url=kommune_url, name=kommune_name)
     mote_response  = kommune.get_url()
@@ -273,10 +274,10 @@ def kjor_kommune(kommune_url: str, kommune_name: str = None) -> None:
         kommune.find_hits_pensjon(pdf_url=pdf)
     pdf_log = {**pdf_log, **kommune.pdf_log}
 
-def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None) -> None: 
+def kjor_direkte_kommune(kommune_url: str, kommune_name: str = None, pdf_log: dict = None) -> None: 
     """Takes kommune_url and kommune_name finds kommune pdfs
     updates pdf_log with new findings and saves to pdf_log.json""" 
-
+    pdf_log = pdf_log
     logger.info(f"Starting kjor_kommune")
     kommune: Kommune = Kommune(url=kommune_url, name=kommune_name)
     pdf_response  = kommune.get_url()
@@ -347,7 +348,7 @@ def save():
 
     json.dump(sendt, open("file/data/sendt.json","w"))
     json.dump(pdf_log, open("file/data/pdf_log.json","w"))
-    json.dump(kommune, open("file/data/kommune.json","w"))
+    # json.dump(kommune, open("file/data/kommune.json","w"))
     json.dump(pdf_set, open("file/data/pdf_set.json","w"))
     json.dump(mote_set, open("file/data/mote_set.json","w"))
     json.dump(standard_kommune, open("file/data/standard_kommune.json","w"))
@@ -358,15 +359,12 @@ if __name__=="__main__":
     try:
         logger.info("starting progam Kommune")
         #loads all necessary logs and files from working directory
-        logger.info("loading file kommune.json")
-        with open("file/data/kommune.json", "r") as f:
-            kommune = json.load(f)
         logger.info("loading file pdf_log.json")
         with open("file/data/pdf_log.json", "r") as f:
             pdf_log = json.load(f)
         logger.info("loading file sendt.json")
         with open("file/data/sendt.json", "r") as f:
-            sendt = json.load()
+            sendt = json.load(f)
         logger.info("loading file pdf_set.json")
         with open("file/data/pdf_set.json","r") as f:
             pdf_set = json.load(f)
@@ -385,26 +383,28 @@ if __name__=="__main__":
         logger.info("loading file direct_kommune.json")
         with open("file/data/direct_kommune.json","r") as f:
             direct_kommune = json.load(f)
-        logger.info("loading file exluded.json")
-        with open("file/data/exluded.json") as f:
-            exluded=json.load(f)
+        logger.info("loading file exclude.json")
+        with open("file/data/exclude.json") as f:
+            exclude=json.load(f)
     except Exception as e:
         logger.exception(f"File load error: {e}")
         sys.exit(0)
     
     
     # starts program loop
-    logger.info("starting programloop")
+    logger.info("starting programloop", exc_info=True)
     try:
         for kommunenavn in tqdm(standard_kommune, desc="Standardkommuner: "):
-            kjor_kommune(kommune_url=standard_kommune[kommunenavn][1], kommune_name=kommunenavn)
+            kjor_kommune(kommune_url=standard_kommune[kommunenavn][1], 
+            kommune_name=kommunenavn, pdf_log=pdf_log)
         for kommunenavn in tqdm(direct_kommune, desc="Directkommuner"):
-            kjor_direkte_kommune(kommune_url=direct_kommune[kommunenavn][1], kommune_name=kommunenavn)
+            kjor_direkte_kommune(kommune_url=direct_kommune[kommunenavn][1], 
+            kommune_name=kommunenavn, pdf_log=pdf_log)
     except Exception as e:
-        logger.error("e, saving pdf-log")
-        logger.info("Writing pdf_log")
-        logger.info(f"Oldsize: {len(pdf_log)}")
-        logger.info(f"Newsize: {len(updated_pdf_log)}")
+        logger.error(f"{e}, saving pdf-log", exc_info=True)
+        logger.info("Writing pdf_log", exc_info=True)
+        # logger.info(f"Oldsize: {len(pdf_log)}")
+        # logger.info(f"Newsize: {len(updated_pdf_log)}")
         with open("file/data/pdf_log.json","w") as f:
             json.dump(pdf_log, f)
     treff_bank = finn_treff_bank()
