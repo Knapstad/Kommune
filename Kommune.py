@@ -409,7 +409,9 @@ if __name__=="__main__":
             json.dump(pdf_log, f)
     treff_bank = finn_treff_bank()
     treff_pensjon = finn_treff_pensjon()
-    print_treff_to_file(treff_bank, "Bank")
-    print_treff_to_file(treff_pensjon, "Pensjon")
+    if len(treff_bank) > 0:
+        print_treff_to_file(treff_bank, "Bank")
+    if len(treff_pensjon) > 0:
+        print_treff_to_file(treff_pensjon, "Pensjon")
     add_to_sendt(treff_bank + treff_pensjon)
     save()
