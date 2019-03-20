@@ -21,7 +21,6 @@ from datetime import date
 from selenium import webdriver
 from urllib.parse import urljoin as urljoin
 from urllib3 import disable_warnings
-from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
 def thisday() -> str:
@@ -224,6 +223,9 @@ class Kommune:
     def get_mote_url(self, resp: BS) -> list:
         """Asumes resp is a url with list of standard meetings,
         @returnes: list of links""" 
+        if resp is None:
+            logger.info("Url is None, returning empty list")
+            return []
         logger.info(f"Getting møte urls {self.name} : {resp.url}")
         elements: list = BS(resp.content, "lxml").findAll("a", href=True)
         links: list = [urljoin(resp.url, a.get("href")) for a in elements if self.sjekk_mote_url(urljoin(resp.url, a.get("href")))]
@@ -231,6 +233,9 @@ class Kommune:
 
     def get_pdf_url(self, resp: BS) -> list:
         """Assumes resp is a meeting url, @returnes all pdf urls form resp"""
+        if resp is None:
+            logger.info("Url is None, returning empty list")
+            return []
         logger.info(f"Getting pdf urls {self.name}: {resp.url}")
         elements: list = BS(resp.content, "lxml").findAll("a", href=True)
         links: list = [urljoin(resp.url, a.get("href")) for a in elements if self.sjekk_pdf_url(urljoin(resp.url, a.get("href")))]
