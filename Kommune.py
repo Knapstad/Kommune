@@ -27,7 +27,7 @@ def thisday() -> str:
     now = date.today()
     return (f"{now.day}-{now.month}-{now.year}")
 
-# logging.basicConfig(level=logging.DEBUG,format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
+# Setter logparametere
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
