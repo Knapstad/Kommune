@@ -3,6 +3,7 @@
 Created on Tue Jul 17 14:21:32 2018
 
 @author: Bendik L Knapstad
+
 """
 
 import os
@@ -22,6 +23,11 @@ from selenium import webdriver
 from urllib.parse import urljoin as urljoin
 from urllib3 import disable_warnings
 from tqdm import tqdm
+
+#TODO: Should add multiprosessing to speed up the run
+# should add async to speed up the IO
+# Need to map ut the remaining kommuner in nonstandardkommuner
+
 
 def thisday() -> str:
     now = date.today()
@@ -51,17 +57,6 @@ try:
 except FileNotFoundError:
     logger.exception("config_.json needs to be present in 'working directory/file'", exc_info=True)
 
-# helper fuctions
-# kommune = json.load(open("file/data/kommune.json", "r"))
-pdf_log = json.load(open("file/data/pdf_log.json", "r"))
-sendt = json.load(open("file/data/sendt.json", "r"))
-pdf_set = json.load(open("file/data/pdf_set.json","r"))
-mote_set = json.load(open("file/data/mote_set.json","r"))
-kommuneliste = json.load(open("file/data/kommuneliste.json","r"))
-standard_kommune = json.load(open("file/data/standard_kommune.json","r"))
-nonstandard_kommune = json.load(open("file/data/nonstandard_kommune.json","r"))
-direct_kommune = json.load(open("file/data/direct_kommune.json","r"))
-
 
 # start Class
 
@@ -76,6 +71,7 @@ class Kommune:
         self.name = name
         self.url = url
         self.pdf: Optional[str] = None
+        # trigger words for bank
         self.bank: list = ["Kommunal garanti", "Kommunal kausjon",
                            "Kommunalgaranti", "Kommunalkausjon",
                            "Simpel garanti ", "Simpel kausjon",
@@ -84,11 +80,13 @@ class Kommune:
                            "Selvskyldner kausjon", "Selvskyldnerkausjon",
                            "Lånepapir", "Lånedokument", "Gjeldsgrad",
                            "Gjeldsandel"]
+        # trigger words for pensjon
         self.pensjon: list =["pensjonsordning", "pensjon", "tjenestepensjon",
                              "innskuddspensjon", "hybridpensjon", 
                              "pensjonsleverandør", "AFP", "Ny pensjonsordning", 
                              "ny pensjon"]
         self.treff: list =[]
+        
         try:
             self.pdf_log: dict = pdf_log
         except NameError:
@@ -371,24 +369,31 @@ if __name__=="__main__":
         with open("file/data/sendt.json", "r") as f:
             sendt = json.load(f)
         logger.info("loading file pdf_set.json")
+        # list of params present i pdf-urls
         with open("file/data/pdf_set.json","r") as f:
             pdf_set = json.load(f)
         logger.info("loading file mote_set.json")
+        # list of params present i meeting-urls
         with open("file/data/mote_set.json","r") as f:
             mote_set = json.load(f)
         logger.info("loading file kommuneliste.json")
+        # list of kommuner and their urls
         with open("file/data/kommuneliste.json","r") as f:
             kommuneliste = json.load(f)
         logger.info("loading file standard_kommune.json")
+        # list of standard kommuner prosseced by script
         with open("file/data/standard_kommune.json","r") as f:
             standard_kommune = json.load(f)
         logger.info("loading file nonstandard_kommune.json")
+        #list of nonstandard kommuner not yet implemented
         with open("file/data/nonstandard_kommune.json","r") as f:
             nonstandard_kommune = json.load(f)
         logger.info("loading file direct_kommune.json")
+        #list fo kommuner who link irectly to the pdfs on kommune url
         with open("file/data/direct_kommune.json","r") as f:
             direct_kommune = json.load(f)
         logger.info("loading file exclude.json")
+        #list of params to exlude urls from processing
         with open("file/data/exclude.json") as f:
             exclude=json.load(f)
     except Exception as e:
@@ -408,8 +413,6 @@ if __name__=="__main__":
     except Exception as e:
         logger.error(f"{e}, saving pdf-log", exc_info=True)
         logger.info("Writing pdf_log", exc_info=True)
-        # logger.info(f"Oldsize: {len(pdf_log)}")
-        # logger.info(f"Newsize: {len(updated_pdf_log)}")
         with open("file/data/pdf_log.json","w") as f:
             json.dump(pdf_log, f)
     treff_bank = finn_treff_bank()
